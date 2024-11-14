@@ -27,8 +27,8 @@ with open("fixed_point_values.txt", "w") as file:
     file.write("X (hex), Y (hex)\n")  # Header line
     for x_hex, y_hex in fixed_point_pairs:
         #file.write(f"{x_hex}, {y_hex}\n")
-        file.write(f"input_data = 32'h{x_hex}\n")
-        file.write(f"#10\n")
+        file.write(f"input_data = 32'h{x_hex};\n")
+        file.write(f"#10;\n")
 
 print("Fixed-point (x, y) values saved to fixed_point_values.txt")
 
