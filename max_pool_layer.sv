@@ -20,7 +20,7 @@ module max_pool_layer #(
     input logic clk,        // clock signal
     input logic rst,        // reset signal 
     input signed logic [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1], // INPUT: each value is 32-bit, array of 64 by 64 values
-    output signed logic [WIDTH-1:0] output_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1] // OUTPUT: each value is 32-bit, array of 64 by 64 values
+    output signed logic [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1] // OUTPUT: each value is 32-bit, array of 64 by 64 values
 );
 
     // Temp Vars //
@@ -33,7 +33,7 @@ module max_pool_layer #(
             // make output = 0 (get rid of trash values)
             for (output_row = 0; output_row < OUTPUT_DIM_HEIGHT; output_row = output_row + 1) begin
                 for (output_col = 0; output_col < OUTPUT_DIM_WIDTH; output_col = output_col + 1) begin
-                    output_feature_map[output_row][output_col] <= 0;
+                    output_reduced_feature_map[output_row][output_col] <= 0;
                 end
             end
         end else begin 
