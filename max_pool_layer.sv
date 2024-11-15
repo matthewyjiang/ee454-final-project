@@ -45,19 +45,16 @@ module max_pool_layer
                 end
             end
         end else begin 
-            // max pool time LETS GET IT POG!!!
-            // okay idk how to write max pool code im so happy rn!! 
-
+            // iterate through slide windows and find the max value
             for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
                 for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
-
-                    // current temp (first value) max_value of sliding window
+                    /* This Code tterates for (1) Slide Window */
+                    // generate temp max_value and its loc
                     max_value = input_feature_map[row * STRIDE][col * STRIDE]; 
+                    max_value_row_idx[row][col] = row * STRIDE;
+                    max_value_col_idx[row][col] = col * STRIDE;
 
-                    // current temp loc of the max value
-                    max_value_row_idx = row * STRIDE;
-                    max_value_col_idx = col * STRIDE;
-
+                    // determine the ACTUAL max value, its row IDX and its col IDX
                     for (window_row = 0; window_row < STRIDE; window_row = window_row + 1) begin
                         for (window_col = 0; window_col < STRIDE; window_col = window_col + 1) begin
                             // within 2D stride window ... find the max value!!
@@ -68,7 +65,8 @@ module max_pool_layer
                             end
                         end
                     end
-                    // for each (row, col) in output, find the max value (store their index row/col positions) in the stride window
+
+                    // store the max_value & row input idx & col input idx
                     max_value_row_idx[row][col] = max_row; 
                     max_value_col_idx[row][col] = max_col;
                     output_reduced_feature_map[row][col] = max_value;
