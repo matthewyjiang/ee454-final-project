@@ -39,11 +39,12 @@ module max_pool_layer
     always_comb begin
         if (rst) begin
             // make output = 0 (get rid of trash values)
-            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
-                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
-                    output_reduced_feature_map[row][col] = 0;
-                end
-            end
+            output_reduced_feature_map = '0; // should work in SystemVerilog???
+            // for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
+            //     for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
+            //         output_reduced_feature_map[row][col] = 0;
+            //     end
+            // end
         end else begin 
             // iterate through slide windows and find the max value
             for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
@@ -76,15 +77,17 @@ module max_pool_layer
     end
 
     /* BACKWARD PROP: Gradient propagation ... is clocked */
-    logic signed [WIDTH-1:0] max_gradient; // stores the gradient of the max value
+    logic signed [WIDTH-1:0] max_val_gradient; // stores the gradient of the max value
+
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             // make gradient_output = 0 (get rid of trash values)
-            for (row = 0; row < INPUT_DIM_HEIGHT; row = row + 1) begin
-                for (col = 0; col < INPUT_DIM_WIDTH; col = col + 1) begin
-                    output_gradient[row][col] <= 0;
-                end
-            end
+            output_gradient = '0; // should work in SystemVerilog???
+            // for (row = 0; row < INPUT_DIM_HEIGHT; row = row + 1) begin
+            //     for (col = 0; col < INPUT_DIM_WIDTH; col = col + 1) begin
+            //         output_gradient[row][col] = 0;
+            //     end
+            // end
         end else begin 
             // summary: propgating layer x + 1 gradients into input loc of the layer X max_layer that was passed down
             // write BACKPROP code here ...
@@ -93,7 +96,7 @@ module max_pool_layer
                     max_val_gradient <= input_gradient[row][col];
                     // max_row = max_value_row_idx[row][col]; // find the max value row idx 
                     // max_col = max_value_col_idx[row][col]; // find the max value col idx
-                    output_gradient[max_value_row_idx[row][col]][max_value_col_idx[row][col]] <= max_gradient; // stores the gradient of the max value in the original input loc
+                    output_gradient[max_value_row_idx[row][col]][max_value_col_idx[row][col]] <= max_val_gradient; // stores the gradient of the max value in the original input loc
                 end
             end
         end
