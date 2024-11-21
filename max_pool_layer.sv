@@ -16,20 +16,21 @@ module max_pool_layer
         parameter int INPUT_DIM_WIDTH = 32,
         parameter int INPUT_DIM_HEIGHT = 32,
         parameter int OUTPUT_DIM_WIDTH = INPUT_DIM_WIDTH / STRIDE,
-        parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE,
+        parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE
     )
 (
     input   logic clk,        // clock signal
     input   logic rst,        // reset signal 
     input   logic signed [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1], // INPUT: each value is 32-bit, array of 64 by 64 values
     input   logic signed [WIDTH-1:0] input_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1], // gradient coming from layer x + 1 (if this is layer X) 
-    output  logic signed [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1] // OUTPUT: each value is 32-bit, array of 64 by 64 values
+    output  logic signed [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1], // OUTPUT: each value is 32-bit, array of 64 by 64 values
     output  logic signed [WIDTH-1:0] output_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1] // gradient to be passed to layer x - 1 (if this is layer X)
 );
 
     // Temp Vars //
     logic signed [WIDTH-1:0] max_value; // should never be negative tho bc inputs are positive
     integer row, col, window_row, window_col; // Loop indices
+    integer row_ff, col_ff; // Loop indices
     integer max_row, max_col; // store the temprow and col of the max value in the stride window
     logic signed [WIDTH-1:0] max_value_row_idx [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
     logic signed [WIDTH-1:0] max_value_col_idx [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
@@ -39,12 +40,12 @@ module max_pool_layer
     always_comb begin
         if (rst) begin
             // make output = 0 (get rid of trash values)
-            output_reduced_feature_map = '0; // should work in SystemVerilog???
-            // for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
-            //     for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
-            //         output_reduced_feature_map[row][col] = 0;
-            //     end
-            // end
+            // output_reduced_feature_map = '0; // should work in SystemVerilog???
+            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
+                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
+                    output_reduced_feature_map[row][col] = 0;
+                end
+            end
         end else begin 
             // iterate through slide windows and find the max value
             for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
@@ -82,21 +83,21 @@ module max_pool_layer
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             // make gradient_output = 0 (get rid of trash values)
-            output_gradient = '0; // should work in SystemVerilog???
-            // for (row = 0; row < INPUT_DIM_HEIGHT; row = row + 1) begin
-            //     for (col = 0; col < INPUT_DIM_WIDTH; col = col + 1) begin
-            //         output_gradient[row][col] = 0;
-            //     end
-            // end
+            // output_gradient = '0; // should work in SystemVerilog???
+            for (row_ff = 0; row_ff < INPUT_DIM_HEIGHT; row_ff = row_ff + 1) begin
+                for (col_ff = 0; col_ff < INPUT_DIM_WIDTH; col_ff = col_ff + 1) begin
+                    output_gradient[row_ff][col_ff] = 0;
+                end
+            end
         end else begin 
             // summary: propgating layer x + 1 gradients into input loc of the layer X max_layer that was passed down
             // write BACKPROP code here ...
-            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
-                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
-                    max_val_gradient <= input_gradient[row][col];
-                    // max_row = max_value_row_idx[row][col]; // find the max value row idx 
-                    // max_col = max_value_col_idx[row][col]; // find the max value col idx
-                    output_gradient[max_value_row_idx[row][col]][max_value_col_idx[row][col]] <= max_val_gradient; // stores the gradient of the max value in the original input loc
+            for (row_ff = 0; row_ff < OUTPUT_DIM_HEIGHT; row_ff = row_ff + 1) begin
+                for (col_ff = 0; col_ff < OUTPUT_DIM_WIDTH; col_ff = col_ff + 1) begin
+                    max_val_gradient = input_gradient[row_ff][col_ff];
+                    // max_row = max_value_row_idx[row_ff][col_ff]; // find the max value row idx 
+                    // max_col = max_value_col_idx[row_ff][col_ff]; // find the max value col idx
+                    output_gradient[max_value_row_idx[row_ff][col_ff]][max_value_col_idx[row_ff][col_ff]] <= max_val_gradient; // stores the gradient of the max value in the original input loc
                 end
             end
         end
