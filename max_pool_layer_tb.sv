@@ -14,7 +14,7 @@ module tb_max_pool_layer_2x2;
     logic clk;
     logic rst;
     logic signed [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
-    logic signed [WIDTH-1:0] input_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
+    logic signed [WIDTH-1:0] input_gradient [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
 
     // Outputs
     logic signed [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
@@ -57,10 +57,7 @@ module tb_max_pool_layer_2x2;
         input_feature_map[1][1] = 16'd4;
 
         // Test case 1: Set gradient (backwards pass)
-        input_gradient[0][0] = 16'd5;
-        input_gradient[0][1] = 16'd6;
-        input_gradient[1][0] = 16'd7;
-        input_gradient[1][1] = 16'd8;
+        input_gradient[0][0] = 16'd8;
 
         // Simulate clock cycles
         #10;
