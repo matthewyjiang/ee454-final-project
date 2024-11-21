@@ -29,9 +29,9 @@ module max_pool_layer
 
     // Temp Vars //
     logic signed [WIDTH-1:0] max_value; // should never be negative tho bc inputs are positive
-    integer row, col, window_row, window_col; // Loop indices
-    integer row_ff, col_ff; // Loop indices
-    integer max_row, max_col; // store the temprow and col of the max value in the stride window
+    integer row, col, window_row, window_col; // Loop indices for forward propogation
+    integer row_ff, col_ff; // Loop indices for backwards propogation
+    integer max_row, max_col; // store the temp row and col of the max value in the stride window
     logic signed [WIDTH-1:0] max_value_row_idx [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
     logic signed [WIDTH-1:0] max_value_col_idx [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
 
@@ -89,15 +89,15 @@ module max_pool_layer
                     output_gradient[row_ff][col_ff] = 0;
                 end
             end
-        end else begin 
+        end else begin
             // summary: propgating layer x + 1 gradients into input loc of the layer X max_layer that was passed down
             // write BACKPROP code here ...
             for (row_ff = 0; row_ff < OUTPUT_DIM_HEIGHT; row_ff = row_ff + 1) begin
                 for (col_ff = 0; col_ff < OUTPUT_DIM_WIDTH; col_ff = col_ff + 1) begin
                     max_val_gradient = input_gradient[row_ff][col_ff];
-                    // max_row = max_value_row_idx[row_ff][col_ff]; // find the max value row idx 
-                    // max_col = max_value_col_idx[row_ff][col_ff]; // find the max value col idx
-                    output_gradient[max_value_row_idx[row_ff][col_ff]][max_value_col_idx[row_ff][col_ff]] <= max_val_gradient; // stores the gradient of the max value in the original input loc
+                    max_row = max_value_row_idx[row_ff][col_ff]; // find the max value row idx 
+                    max_col = max_value_col_idx[row_ff][col_ff]; // find the max value col idx
+                    output_gradient[max_row][max_col] <= max_val_gradient; // stores the gradient of the max value in the original input loc
                 end
             end
         end

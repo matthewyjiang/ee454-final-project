@@ -60,7 +60,7 @@ module tb_max_pool_layer_2x2;
         input_gradient[0][0] = 16'd8;
 
         // Simulate clock cycles
-        #10;
+        #15;
 
         // End simulation
         $finish;
