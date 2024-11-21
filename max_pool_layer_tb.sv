@@ -1,30 +1,22 @@
-`timescale 1ns / 1ps
-
 module tb_max_pool_layer_2x2;
 
-    // Parameters
-    parameter int WIDTH = 16;           // 16-bit fixed-point
-    parameter int STRIDE = 2;           // Stride of 2
+    // Parameters for input size
+    parameter int WIDTH = 16;
+    parameter int STRIDE = 2;
     parameter int INPUT_DIM_WIDTH = 2;  // 2x2 input
     parameter int INPUT_DIM_HEIGHT = 2; // 2x2 input
-    parameter int OUTPUT_DIM_WIDTH = INPUT_DIM_WIDTH / STRIDE;   // 1x1 output
-    parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE; // 1x1 output
+    parameter int OUTPUT_DIM_WIDTH = INPUT_DIM_WIDTH / STRIDE;
+    parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE;
 
-    // Inputs
+    // Inputs to the max_pool_layer
     logic clk;
     logic rst;
     logic signed [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
     logic signed [WIDTH-1:0] input_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
 
-    // Outputs
+    // Outputs from the max_pool_layer
     logic signed [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
     logic signed [WIDTH-1:0] output_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
-
-    // Clock generation
-    initial begin
-        clk = 0;
-        forever #5 clk = ~clk;
-    end
 
     // Instantiate the max_pool_layer
     max_pool_layer #(
@@ -43,20 +35,26 @@ module tb_max_pool_layer_2x2;
         .output_gradient(output_gradient)
     );
 
+    // Clock generation
+    always #5 clk = ~clk;
 
-    // stimulus
+    // Test sequence
     initial begin
-        rst = 1; // rst init
-        #10 rst = 0; // rst deassert after 10 time units
+        // Initialize clock and reset
+        clk = 0;
+        rst = 1;
 
-        // Test case 1: 2x2 input (forward pass)
+        // Apply reset for 10 time units
+        #10 rst = 0;
+
+        // Test case: 2x2 input
         $display("Test Case: 2x2 Input");
         input_feature_map[0][0] = 16'd1;
         input_feature_map[0][1] = 16'd3;
         input_feature_map[1][0] = 16'd2;
         input_feature_map[1][1] = 16'd4;
 
-        // Test case 1: Set gradient (backwards pass)
+        // Set gradient
         input_gradient[0][0] = 16'd5;
         input_gradient[0][1] = 16'd6;
         input_gradient[1][0] = 16'd7;
