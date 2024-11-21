@@ -1,83 +1,104 @@
-`timescale 1ns / 1ps
+/* Initialization */
+// stride = step size of pooling window (stride = 2 means division of input spatial dimentions by half)
 
-module tb_max_pool_layer_2x2;
+/* Forward Prop */ 
+// for a window (stride x stride size) in featureMap, find the biggest value
+// supposed to keep "most significant" information but also down sample 
 
-    // Parameters
-    parameter int WIDTH = 16;           // 16-bit fixed-point
-    parameter int STRIDE = 2;           // Stride of 2
-    parameter int INPUT_DIM_WIDTH = 2;  // 2x2 input
-    parameter int INPUT_DIM_HEIGHT = 2; // 2x2 input
-    parameter int OUTPUT_DIM_WIDTH = INPUT_DIM_WIDTH / STRIDE;   // 1x1 output
-    parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE; // 1x1 output
+/* Backward Prop */
+// error gradient propogated to the input loc that had max value in forward prop (value that was initially passed onto nexxt layer in forward prop)
+// other values in the window are set to 0 (i think??)
 
-    // Inputs
-    logic clk;
-    logic rst;
-    logic signed [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
-    logic signed [WIDTH-1:0] input_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
+module max_pool_layer 
+    #(
+        parameter int WIDTH = 16,
+        parameter int STRIDE = 2, 
+        parameter int INPUT_DIM_WIDTH = 32,
+        parameter int INPUT_DIM_HEIGHT = 32,
+        parameter int OUTPUT_DIM_WIDTH = INPUT_DIM_WIDTH / STRIDE,
+        parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE,
+    )
+(
+    input   logic clk,        // clock signal
+    input   logic rst,        // reset signal 
+    input   logic signed [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1], // INPUT: each value is 32-bit, array of 64 by 64 values
+    input   logic signed [WIDTH-1:0] input_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1], // gradient coming from layer x + 1 (if this is layer X) 
+    output  logic signed [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1] // OUTPUT: each value is 32-bit, array of 64 by 64 values
+    output  logic signed [WIDTH-1:0] output_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1] // gradient to be passed to layer x - 1 (if this is layer X)
+);
 
-    // Outputs
-    logic signed [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
-    logic signed [WIDTH-1:0] output_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
+    // Temp Vars //
+    logic signed [WIDTH-1:0] max_value; // should never be negative tho bc inputs are positive
+    integer row, col, window_row, window_col; // Loop indices
+    integer max_row, max_col; // store the temprow and col of the max value in the stride window
+    logic signed [WIDTH-1:0] max_value_row_idx [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
+    logic signed [WIDTH-1:0] max_value_col_idx [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
 
-    // Clock generation
-    initial begin
-        clk = 0;
-        forever #5 clk = ~clk;
-    end
+    // use always_ff to signify sequential logic in SystemVerilog
+    /* FORWARD PROP: Max Pool .... is continous (but inputs are clocked) */
+    always_comb begin
+        if (rst) begin
+            // make output = 0 (get rid of trash values)
+            output_reduced_feature_map = '0; // should work in SystemVerilog???
+            // for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
+            //     for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
+            //         output_reduced_feature_map[row][col] = 0;
+            //     end
+            // end
+        end else begin 
+            // iterate through slide windows and find the max value
+            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
+                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
+                    /* This Code tterates for (1) Slide Window */
+                    // generate temp max_value and its loc
+                    max_value = input_feature_map[row * STRIDE][col * STRIDE]; 
+                    max_value_row_idx[row][col] = row * STRIDE;
+                    max_value_col_idx[row][col] = col * STRIDE;
 
-    // Instantiate the max_pool_layer
-    max_pool_layer #(
-        .WIDTH(WIDTH),
-        .STRIDE(STRIDE),
-        .INPUT_DIM_WIDTH(INPUT_DIM_WIDTH),
-        .INPUT_DIM_HEIGHT(INPUT_DIM_HEIGHT),
-        .OUTPUT_DIM_WIDTH(OUTPUT_DIM_WIDTH),
-        .OUTPUT_DIM_HEIGHT(OUTPUT_DIM_HEIGHT)
-    ) uut (
-        .clk(clk),
-        .rst(rst),
-        .input_feature_map(input_feature_map),
-        .input_gradient(input_gradient),
-        .output_reduced_feature_map(output_reduced_feature_map),
-        .output_gradient(output_gradient)
-    );
+                    // determine the ACTUAL max value, its row IDX and its col IDX
+                    for (window_row = 0; window_row < STRIDE; window_row = window_row + 1) begin
+                        for (window_col = 0; window_col < STRIDE; window_col = window_col + 1) begin
+                            // within 2D stride window ... find the max value!!
+                            if (input_feature_map[(row * STRIDE) + window_row][(col * STRIDE) + window_col] > max_value) begin
+                                max_value = input_feature_map[(row * STRIDE) + window_row][(col * STRIDE) + window_col];
+                                max_row = (row * STRIDE) + window_row; // update max row
+                                max_col = (col * STRIDE) + window_col; // update max col
+                            end
+                        end
+                    end
 
-
-    // stimulus
-    initial begin
-        rst = 1; // rst init
-        #10 rst = 0; // rst deassert after 10 time units
-
-        // Test case 1: 2x2 input (forward pass)
-        $display("Test Case: 2x2 Input");
-        input_feature_map[0][0] = 16'd1;
-        input_feature_map[0][1] = 16'd3;
-        input_feature_map[1][0] = 16'd2;
-        input_feature_map[1][1] = 16'd4;
-
-        // Test case 1: Set gradient (backwards pass)
-        input_gradient[0][0] = 16'd5;
-        input_gradient[0][1] = 16'd6;
-        input_gradient[1][0] = 16'd7;
-        input_gradient[1][1] = 16'd8;
-
-        // Simulate clock cycles
-        #10;
-
-        // End simulation
-        $finish;
-    end
-
-    // Display output
-    always @(posedge clk) begin
-        $display("Output Reduced Feature Map:");
-        for (int i = 0; i < OUTPUT_DIM_HEIGHT; i = i + 1) begin
-            $display("%0p", output_reduced_feature_map[i]);
+                    // store the max_value & row input idx & col input idx
+                    max_value_row_idx[row][col] = max_row; 
+                    max_value_col_idx[row][col] = max_col;
+                    output_reduced_feature_map[row][col] = max_value;
+                end
+            end
         end
-        $display("Output Gradient:");
-        for (int i = 0; i < INPUT_DIM_HEIGHT; i = i + 1) begin
-            $display("%0p", output_gradient[i]);
+    end
+
+    /* BACKWARD PROP: Gradient propagation ... is clocked */
+    logic signed [WIDTH-1:0] max_val_gradient; // stores the gradient of the max value
+
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            // make gradient_output = 0 (get rid of trash values)
+            output_gradient = '0; // should work in SystemVerilog???
+            // for (row = 0; row < INPUT_DIM_HEIGHT; row = row + 1) begin
+            //     for (col = 0; col < INPUT_DIM_WIDTH; col = col + 1) begin
+            //         output_gradient[row][col] = 0;
+            //     end
+            // end
+        end else begin 
+            // summary: propgating layer x + 1 gradients into input loc of the layer X max_layer that was passed down
+            // write BACKPROP code here ...
+            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
+                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
+                    max_val_gradient <= input_gradient[row][col];
+                    // max_row = max_value_row_idx[row][col]; // find the max value row idx 
+                    // max_col = max_value_col_idx[row][col]; // find the max value col idx
+                    output_gradient[max_value_row_idx[row][col]][max_value_col_idx[row][col]] <= max_val_gradient; // stores the gradient of the max value in the original input loc
+                end
+            end
         end
     end
 endmodule
