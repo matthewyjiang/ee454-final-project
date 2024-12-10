@@ -26,12 +26,9 @@ module fully_connected_layer
         .out(lfsr_out)
     );
 
-    logic state;
-    logic [$clog2(INPUT_DIM)-1:0] j;
-
     // Forward pass (combinational logic)
     always_comb begin
-        if(state != 0) begin
+        if(state == RUN) begin
             for (int i = 0; i < OUTPUT_DIM; i++) begin
                 output_data[i] = bias[i];
                 for (int j = 0; j < INPUT_DIM; j++) begin
@@ -44,26 +41,46 @@ module fully_connected_layer
     logic signed [WIDTH-1:0] temp_val;
 
     // Backward pass (sequential logic)
+    state_t state;
+    typedef enum {INIT, RUN} state_t;
+    logic [$clog2(INPUT_DIM)-1:0] j;
+
     always_ff @(posedge clk or negedge reset) begin
         if (!reset) begin
             state <= 0;
             j <= 0;
         end else begin
-            if(state == 0) begin
+            if(state == INIT) begin
                 // Initialize weights and biases to zero (or random later)
                 for(int i = 0; i < OUTPUT_DIM; i++) begin
                     bias[i] <= 0;
                     weights[j][i] <= lfsr_out[i*WIDTH-1 +: WIDTH];
                 end
                 j <= j + 1;
-            end
-            else begin
-            // Placeholder for backward pass logic
-            // Compute input_error and weight updates based on output_error
-            // Update weights and biases using learning rate
 
-            // Example of weight update using learning rate:
-            // weights[i][j] <= weights[i][j] + LEARNING_RATE * output_error[i] * input_data[j];
+                if(j == INPUT_DIM) begin
+                    state <= RUN;
+                end
+            end
+            // else if (state == RUN) begin
+            //     // Placeholder for backward pass logic
+            //     // Compute input_error and weight updates based on output_error
+            //     // Update weights and biases using learning rate
+
+            //     // Example of weight update using learning rate:
+            //     // weights[i][j] <= weights[i][j] + LEARNING_RATE * output_error[i] * input_data[j];
+                
+            // end
+        end
+    end
+
+    // Backward pass (combinational logic)
+    always_comb begin
+        if(state == RUN) begin
+            for (int i = 0; i < OUTPUT_DIM; i++) begin
+                for (int j = 0; j < INPUT_DIM; j++) begin
+                    weights[i][j] = weights[i][j] + LEARNING_RATE * output_error[i] * input_data[j];
+                end
             end
         end
     end

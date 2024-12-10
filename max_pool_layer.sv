@@ -95,9 +95,9 @@ module max_pool_layer
             for (row_ff = 0; row_ff < OUTPUT_DIM_HEIGHT; row_ff = row_ff + 1) begin
                 for (col_ff = 0; col_ff < OUTPUT_DIM_WIDTH; col_ff = col_ff + 1) begin
                     max_val_gradient = input_gradient[row_ff][col_ff];
-                    max_row = max_value_row_idx[row_ff][col_ff]; // find the max value row idx 
-                    max_col = max_value_col_idx[row_ff][col_ff]; // find the max value col idx
-                    output_gradient[max_row][max_col] <= max_val_gradient; // stores the gradient of the max value in the original input loc
+                    // max_row = max_value_row_idx[row_ff][col_ff]; // find the max value row idx 
+                    // max_col = max_value_col_idx[row_ff][col_ff]; // find the max value col idx
+                    output_gradient[max_value_row_idx[row_ff][col_ff]][max_value_col_idx[row_ff][col_ff]] <= max_val_gradient; // stores the gradient of the max value in the original input loc
                 end
             end
         end
