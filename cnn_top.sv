@@ -3,7 +3,10 @@ module cnn_top
     parameter int WIDTH = 16, 
     parameter int LEARNING_RATE,
     parameter int FCL_INPUT_DIM = 4,
-    parameter int FCL_OUTPUT_DIM = 10
+    parameter int FCL_OUTPUT_DIM = 10,
+    parameter int MAX_POOL_STRIDE = 2,
+    parameter int MAX_POOL_INPUT_DIM_HEIGHT = 28,
+    parameter int MAX_POOL_INPUT_DIM_WIDTH = 28
 ) 
 (
     input  logic clk,
@@ -22,6 +25,23 @@ logic signed [WIDTH-1:0] fcl_input_error [FCL_INPUT_DIM];
 
 logic signed [WIDTH-1:0] softmax_output [FCL_OUTPUT_DIM];
 
+// Instantiate a maxpool module
+
+max_pool_layer #(
+    .WIDTH(WIDTH),
+    .STRIDE(MAX_POOL_STRIDE),
+    .INPUT_DIM_HEIGHT(MAX_POOL_INPUT_DIM_HEIGHT),
+    .OUTPUT_DIM_HEIGHT(MAX_POOL_INPUT_DIM_WIDTH)
+) max_pool_layer_inst (
+    .clk(clk),
+    .input_feature_map(),
+    .output_gradient(),
+    .output_reduced_feature_map(),
+    .input_gradient()
+);
+
+// Instantiate a fully connected layer module
+
 fully_connected_layer #(
     .WIDTH(WIDTH),
     .INPUT_DIM(FCL_INPUT_DIM),
@@ -29,7 +49,6 @@ fully_connected_layer #(
     .LEARNING_RATE(LEARNING_RATE)
 ) fully_connected_layer_inst (
     .clk(clk),
-    .reset(reset),
     .input_data(input_data),
     .output_error(fcl_output_error),
     .input_weights(fcl_input_weights),
@@ -37,6 +56,8 @@ fully_connected_layer #(
     .input_error(fcl_input_error),
     .output_weights(fcl_output_weights)
 );
+
+// Instantiate a softmax module
 
 softmax #(
     .WIDTH(WIDTH),
