@@ -20,7 +20,6 @@ module max_pool_layer
     )
 (
     input   logic clk,        // clock signal
-    input   logic rst,        // reset signal 
     input   logic signed [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1], // (from layer X-1) INPUT: each value is 32-bit, array of 64 by 64 values
     input   logic signed [WIDTH-1:0] output_gradient [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1], // (to layer X-1) gradient coming from layer x + 1 (if this is layer X) 
     output  logic signed [WIDTH-1:0] output_reduced_feature_map [0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1], // (from layer X+1) OUTPUT: each value is 32-bit, array of 64 by 64 values
@@ -46,7 +45,7 @@ module max_pool_layer
     // use always_ff to signify sequential logic in SystemVerilog
     
     always_comb begin
-        
+
         /*******************************/
         /* MaxPool Forward Propogation */
         /*******************************/
@@ -84,6 +83,13 @@ module max_pool_layer
         /* MaxPool Backwards Propogation */
         /*********************************/
 
+        // Init all passed gradients to 0 
+        for (row = 0; row < INPUT_DIM_HEIGHT; row = row + 1) begin 
+            for (col = 0; col < INPUT_DIM_WIDTH; col = col + 1) begin 
+                input_gradient[row][col] = 0;
+            end
+        end
+
         // Loop through each gradient value 
         for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
             for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
@@ -96,7 +102,7 @@ module max_pool_layer
                 temp_gradient_col_idx = max_sliding_value_col_idx[row][col]; // find the max value col idx
 
                 // Store the gradient value
-                input_gradient[temp_gradient_row_idx][temp_gradient_col_idx] <= max_val_gradient;
+                input_gradient[temp_gradient_row_idx][temp_gradient_col_idx] = max_val_gradient;
             end
         end
     end

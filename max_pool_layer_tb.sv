@@ -12,7 +12,6 @@ module tb_max_pool_layer_2x2;
 
     // Inputs
     logic clk;
-    logic rst;
     logic signed [WIDTH-1:0] input_feature_map [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
     logic signed [WIDTH-1:0] input_gradient [0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
 
@@ -37,7 +36,6 @@ module tb_max_pool_layer_2x2;
         .OUTPUT_DIM_HEIGHT(OUTPUT_DIM_HEIGHT)
     ) uut (
         .clk(clk),
-        .rst(rst),
         .input_feature_map(input_feature_map),
         .input_gradient(input_gradient),
         .output_reduced_feature_map(output_reduced_feature_map),
@@ -47,8 +45,8 @@ module tb_max_pool_layer_2x2;
 
     // stimulus
     initial begin
-        rst = 1; // rst init
-        #10 rst = 0; // rst deassert after 10 time units
+
+        #10;
 
         // Test case 1: 2x2 input (forward pass)
         $display("Test Case: 2x2 Input");
@@ -63,12 +61,7 @@ module tb_max_pool_layer_2x2;
         // Simulate clock cycles
         #20;
 
-        // End simulation
-        $finish;
-    end
-
-    // Display output
-    always @(posedge clk) begin
+        // Display Output
         $display("Output Reduced Feature Map:");
         for (int i = 0; i < OUTPUT_DIM_HEIGHT; i = i + 1) begin
             $display("%0p", output_reduced_feature_map[i]);
@@ -77,5 +70,20 @@ module tb_max_pool_layer_2x2;
         for (int i = 0; i < INPUT_DIM_HEIGHT; i = i + 1) begin
             $display("%0p", input_gradient[i]);
         end
+
+        // End simulation
+        $finish;
     end
+
+    // // Display output
+    // always @(posedge clk) begin
+    //     $display("Output Reduced Feature Map:");
+    //     for (int i = 0; i < OUTPUT_DIM_HEIGHT; i = i + 1) begin
+    //         $display("%0p", output_reduced_feature_map[i]);
+    //     end
+    //     $display("Output Gradient:");
+    //     for (int i = 0; i < INPUT_DIM_HEIGHT; i = i + 1) begin
+    //         $display("%0p", input_gradient[i]);
+    //     end
+    // end
 endmodule
