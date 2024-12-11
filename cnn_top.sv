@@ -58,7 +58,7 @@ always_ff @(posedge clk or negedge reset) begin
     end
     else begin
         if(state == INIT) begin
-            // Initialize weights and biases to zero (or random later)
+            // Initialize weights and biases to random
             for(int j = 0; j < FCL_OUTPUT_DIM; j++) begin
                 fcl_input_weights[i][j] <= lfsr_out[j*WIDTH +: WIDTH];
             end

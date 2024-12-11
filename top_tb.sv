@@ -3,7 +3,7 @@
 module top_tb;
 
     // Parameters
-    parameter int WIDTH = 2;
+    parameter int WIDTH = 32;
     parameter int INPUT_DIM = 4;
     parameter int OUTPUT_DIM = 2;
     parameter int LEARNING_RATE = 1;
