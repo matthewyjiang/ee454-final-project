@@ -46,76 +46,58 @@ module max_pool_layer
     // use always_ff to signify sequential logic in SystemVerilog
     
     always_comb begin
-        // Reset Logic // 
-        if (rst) begin
-            // (1) Set output Values (to layer X) to 0 on RST // 
-            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
-                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
-                    output_reduced_feature_map[row][col] = 0;
-                end
-            end
+        
+        /*******************************/
+        /* MaxPool Forward Propogation */
+        /*******************************/
 
-            // (2) Set output gradient (to layer X-1) to 0 on RST //
-            for (row = 0; row < INPUT_DIM_HEIGHT; row = row + 1) begin
-                for (col = 0; col < INPUT_DIM_WIDTH; col = col + 1) begin
-                    input_gradient[row][col] = 0;
-                end
-            end
+        // Input Feature Map: loop through every possible sliding window
+        for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
+            for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
+                
+                // Initialize (first) potential max value in this sliding window
+                largest_val_in_window = input_feature_map[row * STRIDE][col * STRIDE]; 
+                max_sliding_value_row_idx[row][col] = row * STRIDE;
+                max_sliding_value_col_idx[row][col] = col * STRIDE;
 
-        end else begin 
-
-            /*******************************/
-            /* MaxPool Forward Propogation */
-            /*******************************/
-
-            // Input Feature Map: loop through every possible sliding window
-            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
-                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
-                    
-                    // Initialize (first) potential max value in this sliding window
-                    largest_val_in_window = input_feature_map[row * STRIDE][col * STRIDE]; 
-                    max_sliding_value_row_idx[row][col] = row * STRIDE;
-                    max_sliding_value_col_idx[row][col] = col * STRIDE;
-
-                    // Logic to evaluate other options in the sliding window
-                    for (window_row = 0; window_row < STRIDE; window_row = window_row + 1) begin
-                        for (window_col = 0; window_col < STRIDE; window_col = window_col + 1) begin
-                            if (input_feature_map[(row * STRIDE) + window_row][(col * STRIDE) + window_col] > largest_val_in_window) begin
-                                
-                                // Identified a larger value in the sliding window, store as "max" value + its coordinates 
-                                largest_val_in_window = input_feature_map[(row * STRIDE) + window_row][(col * STRIDE) + window_col];
-                                temp_max_value_row_idx = (row * STRIDE) + window_row; // update max row
-                                temp_max_value_col_idx = (col * STRIDE) + window_col; // update max col
-                            end
+                // Logic to evaluate other options in the sliding window
+                for (window_row = 0; window_row < STRIDE; window_row = window_row + 1) begin
+                    for (window_col = 0; window_col < STRIDE; window_col = window_col + 1) begin
+                        if (input_feature_map[(row * STRIDE) + window_row][(col * STRIDE) + window_col] > largest_val_in_window) begin
+                            
+                            // Identified a larger value in the sliding window, store as "max" value + its coordinates 
+                            largest_val_in_window = input_feature_map[(row * STRIDE) + window_row][(col * STRIDE) + window_col];
+                            temp_max_value_row_idx = (row * STRIDE) + window_row; // update max row
+                            temp_max_value_col_idx = (col * STRIDE) + window_col; // update max col
                         end
                     end
-
-                    // Temporarily Serialize the "largest" value this window + reference to its location
-                    max_sliding_value_row_idx[row][col] = temp_max_value_row_idx; 
-                    max_sliding_value_col_idx[row][col] = temp_max_value_col_idx;
-                    output_reduced_feature_map[row][col] = largest_val_in_window; // identified value for output feature map
                 end
-            end
 
-            /*********************************/
-            /* MaxPool Backwards Propogation */
-            /*********************************/
-
-            // Loop through each gradient value 
-            for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
-                for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
-                    
-                    // Pull out the gradient value 
-                    max_val_gradient = output_gradient[row][col];
-
-                    // Identify idx location to store the gradient value
-                    temp_gradient_row_idx = max_sliding_value_row_idx[row][col]; // find the max value row idx 
-                    temp_gradient_col_idx = max_sliding_value_col_idx[row][col]; // find the max value col idx
-
-                    // Store the gradient value
-                    input_gradient[temp_gradient_row_idx][temp_gradient_col_idx] <= max_val_gradient;
-                end
+                // Temporarily Serialize the "largest" value this window + reference to its location
+                max_sliding_value_row_idx[row][col] = temp_max_value_row_idx; 
+                max_sliding_value_col_idx[row][col] = temp_max_value_col_idx;
+                output_reduced_feature_map[row][col] = largest_val_in_window; // identified value for output feature map
             end
         end
-    end    
+
+        /*********************************/
+        /* MaxPool Backwards Propogation */
+        /*********************************/
+
+        // Loop through each gradient value 
+        for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
+            for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
+                
+                // Pull out the gradient value 
+                max_val_gradient = output_gradient[row][col];
+
+                // Identify idx location to store the gradient value
+                temp_gradient_row_idx = max_sliding_value_row_idx[row][col]; // find the max value row idx 
+                temp_gradient_col_idx = max_sliding_value_col_idx[row][col]; // find the max value col idx
+
+                // Store the gradient value
+                input_gradient[temp_gradient_row_idx][temp_gradient_col_idx] <= max_val_gradient;
+            end
+        end
+    end
 endmodule
