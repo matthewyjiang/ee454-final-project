@@ -13,23 +13,21 @@ module cnn_top
 signed logic [WIDTH-1:0] fcl_input_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
 signed logic [WIDTH-1:0] fcl_output_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
 
-module fully_connected_layer 
-    #(
-        .WIDTH(WIDTH),
-        .INPUT_DIM(FCL_INPUT_DIM),
-        .OUTPUT_DIM(FCL_OUTPUT_DIM),
-        .LEARNING_RATE(LEARNING_RATE)
-    )
-    fully_connected_layer_inst (
-        .clk(clk),
-        .reset(reset),
-        .input_data(),
-        .output_error(),
-        .input_weights(fcl_input_weights),
-        .output_data(),
-        .input_error(),
-        .output_weights(fcl_output_weights)
-    );
+fully_connected_layer fully_connected_layer_inst #(
+    .WIDTH(WIDTH),
+    .INPUT_DIM(FCL_INPUT_DIM),
+    .OUTPUT_DIM(FCL_OUTPUT_DIM),
+    .LEARNING_RATE(LEARNING_RATE)
+)(
+    .clk(clk),
+    .reset(reset),
+    .input_data(),
+    .output_error(),
+    .input_weights(fcl_input_weights),
+    .output_data(),
+    .input_error(),
+    .output_weights(fcl_output_weights)
+);
 
 logic [WIDTH*FCL_OUTPUT_DIM-1:0] lfsr_out;
 // Instantiate a LFSR module
