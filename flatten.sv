@@ -3,8 +3,8 @@ module flatten
         parameter int WIDTH = 16,                                   // bit width of input 
         parameter int CHANNELS = 3,                                 // channels
         parameter int DIM3_WIDTH = 32,                              // WIDTH of 3D Matrix
-        parameter int DIM3_HEIGHT = 32                             // HEIGHT of 3D Matrix
-        parameter int  DIM1_LENGTH = CHANNELS * DIM3_WIDTH * DIM3_HEIGHT;
+        parameter int DIM3_HEIGHT = 32,                             // HEIGHT of 3D Matrix
+        parameter int DIM1_LENGTH = CHANNELS * DIM3_WIDTH * DIM3_HEIGHT
     )
 (
     input   logic signed [WIDTH-1:0] input_3D_maxpool_matrix [0:CHANNELS-1][0:DIM3_HEIGHT-1][0:DIM3_WIDTH-1],     // (from layer X-1) 

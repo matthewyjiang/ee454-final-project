@@ -5,20 +5,20 @@ module tb_max_pool_layer_2x2;
     // Parameters
     parameter int WIDTH = 16;           // 16-bit fixed-point
     parameter int STRIDE = 2;           // Stride of 2
-    parameter int INPUT_DIM_WIDTH = 8;  
-    parameter int INPUT_DIM_HEIGHT = 8; 
-    parameter int INPUT_CHANNELS = 2;   // Number of channels
+    parameter int INPUT_DIM_WIDTH = 4;  
+    parameter int INPUT_DIM_HEIGHT = 4; 
+    parameter int CHANNELS = 2;   // Number of channels
     parameter int OUTPUT_DIM_WIDTH = INPUT_DIM_WIDTH / STRIDE;   // 1x1 output
     parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE; // 1x1 output
 
     // Inputs
     logic clk;
-    logic signed [WIDTH-1:0] input_feature_map [0:INPUT_CHANNELS-1][0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
-    logic signed [WIDTH-1:0] input_gradient [0:INPUT_CHANNELS-1][0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
+    logic signed [WIDTH-1:0] input_feature_map [0:CHANNELS-1][0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
+    logic signed [WIDTH-1:0] input_gradient [0:CHANNELS-1][0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1];
 
     // Outputs
-    logic signed [WIDTH-1:0] output_reduced_feature_map [0:INPUT_CHANNELS-1][0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
-    logic signed [WIDTH-1:0] output_gradient [0:INPUT_CHANNELS-1][0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
+    logic signed [WIDTH-1:0] output_reduced_feature_map [0:CHANNELS-1][0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
+    logic signed [WIDTH-1:0] output_gradient [0:CHANNELS-1][0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1];
 
 
     // Clock generation
@@ -30,7 +30,7 @@ module tb_max_pool_layer_2x2;
     // Instantiate the max_pool_layer
     max_pool_layer #(
         .WIDTH(WIDTH),
-        .CHANNELS(INPUT_CHANNELS),
+        .CHANNELS(CHANNELS),
         .STRIDE(STRIDE),
         .INPUT_DIM_WIDTH(INPUT_DIM_WIDTH),
         .INPUT_DIM_HEIGHT(INPUT_DIM_HEIGHT),
@@ -186,7 +186,7 @@ module tb_max_pool_layer_2x2;
             $display("Channel %0d:", ch);
             for (int row = 0; row < INPUT_DIM_HEIGHT; row++) begin
                 for (int col = 0; col < INPUT_DIM_WIDTH; col++) begin
-                    $write("%0d ", output_reduced_feature_map[ch][row][col]); // pretty print
+                    $write("%0d ", input_gradient[ch][row][col]); // pretty print
                 end
                 $display();
             end
