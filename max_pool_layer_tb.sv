@@ -5,8 +5,8 @@ module tb_max_pool_layer_2x2;
     // Parameters
     parameter int WIDTH = 16;           // 16-bit fixed-point
     parameter int STRIDE = 2;           // Stride of 2
-    parameter int INPUT_DIM_WIDTH = 4;  
-    parameter int INPUT_DIM_HEIGHT = 4; 
+    parameter int INPUT_DIM_WIDTH = 8;  
+    parameter int INPUT_DIM_HEIGHT = 8; 
     parameter int OUTPUT_DIM_WIDTH = INPUT_DIM_WIDTH / STRIDE;   // 1x1 output
     parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE; // 1x1 output
 
@@ -146,8 +146,23 @@ module tb_max_pool_layer_2x2;
         input_feature_map[7][0] = 16'd50;  input_feature_map[7][1] = 16'd52;  input_feature_map[7][2] = 16'd54;  input_feature_map[7][3] = 16'd56;
         input_feature_map[7][4] = 16'd58;  input_feature_map[7][5] = 16'd60;  input_feature_map[7][6] = 16'd62;  input_feature_map[7][7] = 16'd64;
 
-        // Simulate clock cycles
-        #20;
+        // Display gradient (backward pass for testing)
+        output_gradient[0][0] = 16'd8;
+        output_gradient[0][1] = 16'd6;
+        output_gradient[0][2] = 16'd4;
+        output_gradient[0][3] = 16'd2;
+        output_gradient[1][0] = 16'd1;
+        output_gradient[1][1] = 16'd2;
+        output_gradient[1][2] = 16'd3;
+        output_gradient[1][3] = 16'd4;
+        output_gradient[2][0] = 16'd3;
+        output_gradient[2][1] = 16'd5;
+        output_gradient[2][2] = 16'd7;
+        output_gradient[2][3] = 16'd9;
+        output_gradient[3][0] = 16'd2;
+        output_gradient[3][1] = 16'd4;
+        output_gradient[3][2] = 16'd6;
+        output_gradient[3][3] = 16'd1;
 
         // Display input feature map
         $display("Input Feature Map:");
@@ -162,19 +177,13 @@ module tb_max_pool_layer_2x2;
         $display("{ 36, 40, 44, 48 }");
         $display("{ 52, 56, 60, 64 }");
 
-        // Display gradient (backward pass for testing)
-        output_gradient[0][0] = 16'd8;
-        output_gradient[0][1] = 16'd6;
-        output_gradient[0][2] = 16'd4;
-        output_gradient[0][3] = 16'd2;
-        output_gradient[1][0] = 16'd1;
-        output_gradient[1][1] = 16'd2;
-        output_gradient[1][2] = 16'd3;
-        output_gradient[1][3] = 16'd4;
-
         // Simulate clock cycles
         #20;
 
+        $display("(to layer X+1) Output Reduced Feature Map:");
+        for (int i = 0; i < OUTPUT_DIM_HEIGHT; i = i + 1) begin
+            $display("%0p", output_reduced_feature_map[i]);
+        end
         $display("(to layer X-1) Gradient:");
         for (int i = 0; i < INPUT_DIM_HEIGHT; i = i + 1) begin
             $display("%0p", input_gradient[i]);
