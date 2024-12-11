@@ -3,8 +3,8 @@ module flatten
         parameter int WIDTH = 16,                                   // bit width of input 
         parameter int CHANNELS = 3,                                 // channels
         parameter int DIM3_WIDTH = 32,                              // WIDTH of 3D Matrix
-        parameter int DIM3_HEIGHT = 32,                             // HEIGHT of 3D Matrix
-        parameter int DIM1_LENGTH = DIM3_WIDTH * DIM3_HEIGHT        // WIDTH of output feature map
+        parameter int DIM3_HEIGHT = 32                             // HEIGHT of 3D Matrix
+        parameter int  DIM1_LENGTH = CHANNELS * DIM3_WIDTH * DIM3_HEIGHT;
     )
 (
     input   logic clk,        // clock signal
@@ -16,6 +16,8 @@ module flatten
 
     // Temp Vars //
     int row, col, ch, idx;
+
+    
 
     always_comb begin
 
