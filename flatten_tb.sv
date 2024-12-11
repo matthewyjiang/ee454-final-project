@@ -2,23 +2,23 @@ module flatten_tb;
 
     // init parameters
     parameter int WIDTH = 16;                                    // Bit width of input
-    parameter int 2D_DIM_WIDTH = 4;                              // WIDTH of 2D Matrix (Reduced for testing)
-    parameter int 2D_DIM_HEIGHT = 4;                             // HEIGHT of 2D Matrix
-    parameter int 1D_ARRAY_LENGTH = 2D_DIM_WIDTH * 2D_DIM_HEIGHT; // WIDTH of output feature map
+    parameter int DIM2_WIDTH = 4;                              // WIDTH of 2D Matrix (Reduced for testing)
+    parameter int DIM2_HEIGHT = 4;                             // HEIGHT of 2D Matrix
+    parameter int DIM1_LENGTH = DIM2_WIDTH * DIM2_HEIGHT; // WIDTH of output feature map
 
     // init signals
     logic clk;
-    logic signed [WIDTH-1:0] input_2D_maxpool_matrix [0:2D_DIM_HEIGHT-1][0:2D_DIM_WIDTH-1];
-    logic signed [WIDTH-1:0] input_1D_fcl_matrix [0:1D_ARRAY_LENGTH-1];
-    logic signed [WIDTH-1:0] output_2D_maxpool_matrix [0:2D_DIM_HEIGHT-1][0:2D_DIM_WIDTH-1];
-    logic signed [WIDTH-1:0] output_1D_fcl_matrix [0:1D_ARRAY_LENGTH-1];
+    logic signed [WIDTH-1:0] input_2D_maxpool_matrix [0:DIM2_HEIGHT-1][0:DIM2_WIDTH-1];
+    logic signed [WIDTH-1:0] input_1D_fcl_matrix [0:DIM1_LENGTH-1];
+    logic signed [WIDTH-1:0] output_2D_maxpool_matrix [0:DIM2_HEIGHT-1][0:DIM2_WIDTH-1];
+    logic signed [WIDTH-1:0] output_1D_fcl_matrix [0:DIM1_LENGTH-1];
 
     // uut the flatten module
     flatten #(
         .WIDTH(WIDTH),
-        .2D_DIM_WIDTH(2D_DIM_WIDTH),
-        .2D_DIM_HEIGHT(2D_DIM_HEIGHT),
-        .1D_ARRAY_LENGTH(1D_ARRAY_LENGTH)
+        .DIM2_WIDTH(DIM2_WIDTH),
+        .DIM2_HEIGHT(DIM2_HEIGHT),
+        .DIM1_LENGTH(DIM1_LENGTH)
     ) dut (
         .clk(clk),
         .input_2D_maxpool_matrix(input_2D_maxpool_matrix),
@@ -32,34 +32,34 @@ module flatten_tb;
 
     // setup 2d matrix
     task initialize_2D_matrix();
-        for (int row = 0; row < 2D_DIM_HEIGHT; row++) begin
-            for (int col = 0; col < 2D_DIM_WIDTH; col++) begin
-                input_2D_maxpool_matrix[row][col] = (row * 2D_DIM_WIDTH + col) + 1; // sets to basic incrementing values
+        for (int row = 0; row < DIM2_HEIGHT; row++) begin
+            for (int col = 0; col < DIM2_WIDTH; col++) begin
+                input_2D_maxpool_matrix[row][col] = (row * DIM2_WIDTH + col) + 1; // sets to basic incrementing values
             end
         end
     endtask
 
     // setup 1d matrix
     task initialize_1D_matrix();
-        for (int idx = 0; idx < 1D_ARRAY_LENGTH; idx++) begin
+        for (int idx = 0; idx < DIM1_LENGTH; idx++) begin
             input_1D_fcl_matrix[idx] = idx + 1; // sets to basic incrementing values.
         end
     endtask
 
     // pretty print functions //
-    task display_2D_matrix(logic signed [WIDTH-1:0] matrix [0:2D_DIM_HEIGHT-1][0:2D_DIM_WIDTH-1]);
+    task display_2D_matrix(logic signed [WIDTH-1:0] matrix [0:DIM2_HEIGHT-1][0:DIM2_WIDTH-1]);
         $display("2D Matrix:");
-        for (int row = 0; row < 2D_DIM_HEIGHT; row++) begin
-            for (int col = 0; col < 2D_DIM_WIDTH; col++) begin
+        for (int row = 0; row < DIM2_HEIGHT; row++) begin
+            for (int col = 0; col < DIM2_WIDTH; col++) begin
                 $write("%0d ", matrix[row][col]); // pretty print
             end
             $display();
         end
     endtask
 
-    task display_1D_matrix(logic signed [WIDTH-1:0] matrix [0:1D_ARRAY_LENGTH-1]);
+    task display_1D_matrix(logic signed [WIDTH-1:0] matrix [0:DIM1_LENGTH-1]);
         $display("1D Matrix:");
-        for (int idx = 0; idx < 1D_ARRAY_LENGTH; idx++) begin
+        for (int idx = 0; idx < DIM1_LENGTH; idx++) begin
             $write("%0d ", matrix[idx]); // pretty print
         end
         $display();
