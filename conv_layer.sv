@@ -21,6 +21,9 @@ module conv_layer
     integer row, col;               // entire feature map
     integer window_row, window_col; // entire kernel
     integer kernel_idx;             // number of kernels
+    
+    // other
+    integer sum;                    // sum of kernel conv
 
     always_comb begin
         /****************/
@@ -32,7 +35,7 @@ module conv_layer
             for (row = 0; row < OUTPUT_DIM_HEIGHT; row = row + 1) begin
                 for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
                     // compute kernel conv
-                    integer sum = 0;
+                    sum = 0;
                     for (window_row = 0; window_row < KERNEL_DIM; window_row = window_row + 1) begin
                         for (window_col = 0; window_col < KERNEL_DIM; window_col = window_col + 1) begin
                             sum = sum + input_image[row + window_row][col + window_col] * input_kernels[kernel_idx][window_row][window_col];
@@ -53,7 +56,7 @@ module conv_layer
                 for (col = 0; col < OUTPUT_DIM_WIDTH; col = col + 1) begin
                     for (window_row = 0; window_row < KERNEL_DIM; window_row = window_row + 1) begin
                         for (window_col = 0; window_col < KERNEL_DIM; window_col = window_col + 1) begin
-                            output_kernels[kernel_idx][window_row][window_col] += LEARNING_RATE*output_error[kernel_idx][row][col] * input_image[row + window_row][col + window_col];
+                            output_kernels[kernel_idx][window_row][window_col] = input_kernels[kernel_idx][window_row][window_col] + LEARNING_RATE*output_error[kernel_idx][row][col] * input_image[row + window_row][col + window_col];
                         end
                     end
                 end
