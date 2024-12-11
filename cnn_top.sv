@@ -134,31 +134,48 @@ LFSR #(.WIDTH(WIDTH*FCL_OUTPUT_DIM)) lfsr (
     .out(lfsr_out)
 );
 
-typedef enum {LFSR_INIT, INIT, RUN} state_t;
+typedef enum {LFSR_INIT, CONV_INIT, FCL_INIT, RUN} state_t;
 state_t state;
-logic [$clog2(FCL_INPUT_DIM):0] i;
+logic [$clog2(FCL_INPUT_DIM):0] fcl_i;
+logic [$clog2(CHANNELS):0] conv_i;
 
 always_ff @(posedge clk or negedge reset) begin
     if (!reset) begin
         state <= LFSR_INIT;
     end 
-    else if (state == LFSR_INIT) begin
-        state <= INIT;
-        i <= 0;
-    end
-    else begin
-        if(state == INIT) begin
+    else begin 
+        if (state == LFSR_INIT) begin
+            state <= CONV_INIT;
+            conv_i <= 0;
+            fcl_i <= 0;
+        end
+        else if (state == CONV_INIT) begin
+            // Initialize kernels to random (am assuming k^2 < FCL_OUTPUT_DIM -- if not, instantiate new lfsr for kernel init)
+            for(int j = 0; j < KERNEL_DIM; j++) begin
+                for(int k = 0; k < KERNEL_DIM; k++) begin
+                    conv_layer_input_kernels[conv_i][j][k] <= lfsr_out[j*KERNEL_DIM*WIDTH + k*WIDTH +: WIDTH];
+                end
+            end
+
+            conv_i <= conv_i + 1;
+
+            if (conv_i == CHANNELS-1) begin
+                state <= FCL_INIT;
+            end
+        end
+        else if (state == FCL_INIT) begin
             // Initialize weights and biases to random
             for(int j = 0; j < FCL_OUTPUT_DIM; j++) begin
-                fcl_input_weights[i][j] <= lfsr_out[j*WIDTH +: WIDTH];
+                fcl_input_weights[fcl_i][j] <= lfsr_out[j*WIDTH +: WIDTH];
             end
-            i <= i + 1;
 
-            if(i == FCL_INPUT_DIM+1) begin
+            fcl_i <= fcl_i + 1;
+
+            if(fcl_i == FCL_INPUT_DIM+1) begin // Question: should this be FCL_INPUT_DIM or FCL_INPUT_DIM+1? since 0-indexing
                 state <= RUN;
             end
         end
-        else if(state == RUN) begin
+        else begin // (state == RUN)
             // update weights
             fcl_input_weights <= fcl_output_weights;
             conv_layer_input_kernels <= conv_layer_output_kernels;
