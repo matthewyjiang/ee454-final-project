@@ -2,39 +2,39 @@ module flatten_tb;
 
     // init parameters
     parameter int WIDTH = 16;                                    // Bit width of input
-    parameter int DIM2_WIDTH = 4;                              // WIDTH of 2D Matrix (Reduced for testing)
-    parameter int DIM2_HEIGHT = 4;                             // HEIGHT of 2D Matrix
-    parameter int DIM1_LENGTH = DIM2_WIDTH * DIM2_HEIGHT; // WIDTH of output feature map
+    parameter int DIM3_WIDTH = 4;                              // WIDTH of 3D Matrix (Reduced for testing)
+    parameter int DIM3_HEIGHT = 4;                             // HEIGHT of 3D Matrix
+    parameter int DIM1_LENGTH = DIM3_WIDTH * DIM3_HEIGHT; // WIDTH of output feature map
 
     // init signals
     logic clk;
-    logic signed [WIDTH-1:0] input_2D_maxpool_matrix [0:DIM2_HEIGHT-1][0:DIM2_WIDTH-1];
+    logic signed [WIDTH-1:0] input_3D_maxpool_matrix [0:DIM3_HEIGHT-1][0:DIM3_WIDTH-1];
     logic signed [WIDTH-1:0] input_1D_fcl_matrix [0:DIM1_LENGTH-1];
-    logic signed [WIDTH-1:0] output_2D_maxpool_matrix [0:DIM2_HEIGHT-1][0:DIM2_WIDTH-1];
+    logic signed [WIDTH-1:0] output_3D_maxpool_matrix [0:DIM3_HEIGHT-1][0:DIM3_WIDTH-1];
     logic signed [WIDTH-1:0] output_1D_fcl_matrix [0:DIM1_LENGTH-1];
 
     // uut the flatten module
     flatten #(
         .WIDTH(WIDTH),
-        .DIM2_WIDTH(DIM2_WIDTH),
-        .DIM2_HEIGHT(DIM2_HEIGHT),
+        .DIM3_WIDTH(DIM3_WIDTH),
+        .DIM3_HEIGHT(DIM3_HEIGHT),
         .DIM1_LENGTH(DIM1_LENGTH)
     ) dut (
         .clk(clk),
-        .input_2D_maxpool_matrix(input_2D_maxpool_matrix),
+        .input_3D_maxpool_matrix(input_3D_maxpool_matrix),
         .input_1D_fcl_matrix(input_1D_fcl_matrix),
-        .output_2D_maxpool_matrix(output_2D_maxpool_matrix),
+        .output_3D_maxpool_matrix(output_3D_maxpool_matrix),
         .output_1D_fcl_matrix(output_1D_fcl_matrix)
     );
 
     // perma generate clock #5
     always #5 clk = ~clk;
 
-    // setup 2d matrix
-    task initialize_2D_matrix();
-        for (int row = 0; row < DIM2_HEIGHT; row++) begin
-            for (int col = 0; col < DIM2_WIDTH; col++) begin
-                input_2D_maxpool_matrix[row][col] = (row * DIM2_WIDTH + col) + 1; // sets to basic incrementing values
+    // setup 3D matrix
+    task initialize_3D_matrix();
+        for (int row = 0; row < DIM3_HEIGHT; row++) begin
+            for (int col = 0; col < DIM3_WIDTH; col++) begin
+                input_3D_maxpool_matrix[row][col] = (row * DIM3_WIDTH + col) + 1; // sets to basic incrementing values
             end
         end
     endtask
@@ -47,10 +47,10 @@ module flatten_tb;
     endtask
 
     // pretty print functions //
-    task display_2D_matrix(logic signed [WIDTH-1:0] matrix [0:DIM2_HEIGHT-1][0:DIM2_WIDTH-1]);
-        $display("2D Matrix:");
-        for (int row = 0; row < DIM2_HEIGHT; row++) begin
-            for (int col = 0; col < DIM2_WIDTH; col++) begin
+    task display_3D_matrix(logic signed [WIDTH-1:0] matrix [0:DIM3_HEIGHT-1][0:DIM3_WIDTH-1]);
+        $display("3D Matrix:");
+        for (int row = 0; row < DIM3_HEIGHT; row++) begin
+            for (int col = 0; col < DIM3_WIDTH; col++) begin
                 $write("%0d ", matrix[row][col]); // pretty print
             end
             $display();
@@ -70,9 +70,9 @@ module flatten_tb;
         clk = 0;
         $display("### Test: Flatten Module ###");
 
-        initialize_2D_matrix();
-        $display("\nInput 2D Matrix:");
-        display_2D_matrix(input_2D_maxpool_matrix);
+        initialize_3D_matrix();
+        $display("\nInput 3D Matrix:");
+        display_3D_matrix(input_3D_maxpool_matrix);
 
         #10;
         $display("\nOutput 1D Matrix (After Forward Propagation):");
@@ -83,8 +83,8 @@ module flatten_tb;
         display_1D_matrix(input_1D_fcl_matrix);
 
         #10;
-        $display("\nOutput 2D Matrix (After Backward Propagation):");
-        display_2D_matrix(output_2D_maxpool_matrix);
+        $display("\nOutput 3D Matrix (After Backward Propagation):");
+        display_3D_matrix(output_3D_maxpool_matrix);
 
         // stop test
         $display("\n### Test Completed ###");
