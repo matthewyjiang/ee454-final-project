@@ -10,77 +10,28 @@ module fully_connected_layer
     input  logic reset,
     input  logic signed [WIDTH-1:0] input_data [INPUT_DIM],
     input  logic signed [WIDTH-1:0] output_error [OUTPUT_DIM],
+    input  logic signed [WIDTH-1:0] input_weights [OUTPUT_DIM][INPUT_DIM+1],
     output logic signed [WIDTH-1:0] output_data [OUTPUT_DIM],
     output logic signed [WIDTH-1:0] input_error [INPUT_DIM]
+    output logic signed [WIDTH-1:0] output_weights [OUTPUT_DIM][INPUT_DIM+1]
+    
 );
-
-    logic signed [WIDTH-1:0] weights [OUTPUT_DIM][INPUT_DIM];
-    logic signed [WIDTH-1:0] bias [OUTPUT_DIM];
-    logic signed [2*WIDTH-1:0] sum [OUTPUT_DIM];
-
-    logic [WIDTH*OUTPUT_DIM-1:0] lfsr_out;
-    // Instantiate a LFSR module
-    LFSR #(.WIDTH(WIDTH*OUTPUT_DIM)) lfsr (
-        .clk(clk),
-        .rst(reset),
-        .out(lfsr_out)
-    );
-
-    // Forward pass (combinational logic)
+    // weights is a 2D array of size OUTPUT_DIM x (INPUT_DIM+1)
+    // bias is the first row of weights 
+    
     always_comb begin
-        if(state == RUN) begin
-            for (int i = 0; i < OUTPUT_DIM; i++) begin
-                output_data[i] = bias[i];
-                for (int j = 0; j < INPUT_DIM; j++) begin
-                    output_data[i] += input_data[j] * weights[i][j];
-                end
+        // Forward pass
+        for (int i = 0; i < OUTPUT_DIM; i++) begin
+            output_data[i] = weights[i][0]; // bias
+            for (int j = 1; j <= INPUT_DIM; j++) begin
+                output_data[i] += input_data[j] * weights[i][j];
             end
         end
-    end
-
-    logic signed [WIDTH-1:0] temp_val;
-
-    // Backward pass (sequential logic)
-    state_t state;
-    typedef enum {INIT, RUN} state_t;
-    logic [$clog2(INPUT_DIM)-1:0] j;
-
-    always_ff @(posedge clk or negedge reset) begin
-        if (!reset) begin
-            state <= 0;
-            j <= 0;
-        end else begin
-            if(state == INIT) begin
-                // Initialize weights and biases to zero (or random later)
-                for(int i = 0; i < OUTPUT_DIM; i++) begin
-                    bias[i] <= 0;
-                    weights[j][i] <= lfsr_out[i*WIDTH-1 +: WIDTH];
-                end
-                j <= j + 1;
-
-                if(j == INPUT_DIM) begin
-                    state <= RUN;
-                end
-            end
-            // else if (state == RUN) begin
-            //     // Placeholder for backward pass logic
-            //     // Compute input_error and weight updates based on output_error
-            //     // Update weights and biases using learning rate
-
-            //     // Example of weight update using learning rate:
-            //     // weights[i][j] <= weights[i][j] + LEARNING_RATE * output_error[i] * input_data[j];
-                
-            // end
-        end
-    end
-
-    // Backward pass (combinational logic)
-    always_comb begin
-        if(state == RUN) begin
-            for (int i = 0; i < OUTPUT_DIM; i++) begin
-                for (int j = 0; j < INPUT_DIM; j++) begin
-                    weights[i][j] = weights[i][j] + LEARNING_RATE * output_error[i] * input_data[j];
-                end
+        // Backward pass
+        for (int i = 0; i < OUTPUT_DIM; i++) begin
+            output_weights[i][0] = input_weights[i][0] + LEARNING_RATE * output_error[i];
+            for (int j = 1; j <= INPUT_DIM; j++) begin
+                output_weights[i][j] = input_weights[i][j] + LEARNING_RATE * output_error[i] * input_data[j];
             end
         end
     end
