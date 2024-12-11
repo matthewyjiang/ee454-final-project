@@ -7,7 +7,6 @@ module flatten
         parameter int  DIM1_LENGTH = CHANNELS * DIM3_WIDTH * DIM3_HEIGHT;
     )
 (
-    input   logic clk,        // clock signal
     input   logic signed [WIDTH-1:0] input_3D_maxpool_matrix [0:CHANNELS-1][0:DIM3_HEIGHT-1][0:DIM3_WIDTH-1],     // (from layer X-1) 
     input   logic signed [WIDTH-1:0] input_1D_fcl_matrix [0:DIM1_LENGTH-1],                     // (to layer X-1) 
     output  logic signed [WIDTH-1:0] output_3D_maxpool_matrix [0:CHANNELS-1][0:DIM3_HEIGHT-1][0:DIM3_WIDTH-1],    // (from layer X+1)

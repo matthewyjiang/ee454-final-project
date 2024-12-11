@@ -20,7 +20,6 @@ module max_pool_layer
         parameter int OUTPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT / STRIDE     // HEIGHT of output feature map
     )
 (
-    input   logic clk,        // clock signal
     input   logic signed [WIDTH-1:0] input_feature_map [0:CHANNELS-1][0:INPUT_DIM_HEIGHT-1][0:INPUT_DIM_WIDTH-1], // (from layer X-1) INPUT: each value is 32-bit, array of 64 by 64 values
     input   logic signed [WIDTH-1:0] output_gradient [0:CHANNELS-1][0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1], // (to layer X-1) gradient coming from layer x + 1 (if this is layer X) 
     output  logic signed [WIDTH-1:0] output_reduced_feature_map [0:CHANNELS-1][0:OUTPUT_DIM_HEIGHT-1][0:OUTPUT_DIM_WIDTH-1], // (from layer X+1) OUTPUT: each value is 32-bit, array of 64 by 64 values

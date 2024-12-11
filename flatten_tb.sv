@@ -22,7 +22,6 @@ module flatten_tb;
         .DIM3_HEIGHT(DIM3_HEIGHT),
         .DIM1_LENGTH(DIM1_LENGTH)
     ) dut (
-        .clk(clk),
         .input_3D_maxpool_matrix(input_3D_maxpool_matrix),
         .input_1D_fcl_matrix(input_1D_fcl_matrix),
         .output_3D_maxpool_matrix(output_3D_maxpool_matrix),
