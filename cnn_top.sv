@@ -7,21 +7,22 @@ module cnn_top
 ) 
 (
     input  logic clk,
-    input  logic reset
+    input  logic reset,
+    input  logic signed [WIDTH-1:0] input_data [FCL_INPUT_DIM]
 );
 
-signed logic [WIDTH-1:0] fcl_input_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
-signed logic [WIDTH-1:0] fcl_output_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
+logic signed [WIDTH-1:0] fcl_input_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
+logic signed [WIDTH-1:0] fcl_output_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
 
-fully_connected_layer fully_connected_layer_inst #(
+fully_connected_layer #(
     .WIDTH(WIDTH),
     .INPUT_DIM(FCL_INPUT_DIM),
     .OUTPUT_DIM(FCL_OUTPUT_DIM),
     .LEARNING_RATE(LEARNING_RATE)
-)(
+) fully_connected_layer_inst (
     .clk(clk),
     .reset(reset),
-    .input_data(),
+    .input_data(input_data),
     .output_error(),
     .input_weights(fcl_input_weights),
     .output_data(),
@@ -37,15 +38,19 @@ LFSR #(.WIDTH(WIDTH*FCL_OUTPUT_DIM)) lfsr (
     .out(lfsr_out)
 );
 
-typedef enum {INIT, RUN} state_t;
+typedef enum {LFSR_INIT, INIT, RUN} state_t;
 state_t state;
-logic [$clog2(FCL_INPUT_DIM)-1:0] i;
+logic [$clog2(FCL_INPUT_DIM):0] i;
 
 always_ff @(posedge clk or negedge reset) begin
     if (!reset) begin
+        state <= LFSR_INIT;
+    end 
+    else if (state == LFSR_INIT) begin
         state <= INIT;
         i <= 0;
-    end else begin
+    end
+    else begin
         if(state == INIT) begin
             // Initialize weights and biases to zero (or random later)
             for(int j = 0; j < FCL_OUTPUT_DIM; j++) begin
@@ -53,7 +58,7 @@ always_ff @(posedge clk or negedge reset) begin
             end
             i <= i + 1;
 
-            if(i == FCL_INPUT_DIM) begin
+            if(i == FCL_INPUT_DIM+1) begin
                 state <= RUN;
             end
         end
