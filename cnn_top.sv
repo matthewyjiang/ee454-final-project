@@ -20,6 +20,8 @@ logic signed [WIDTH-1:0] fcl_output_data [FCL_OUTPUT_DIM];
 logic signed [WIDTH-1:0] fcl_input_error [FCL_INPUT_DIM];
 // logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM];
 
+logic signed [WIDTH-1:0] softmax_output [FCL_OUTPUT_DIM];
+
 fully_connected_layer #(
     .WIDTH(WIDTH),
     .INPUT_DIM(FCL_INPUT_DIM),
@@ -34,6 +36,14 @@ fully_connected_layer #(
     .output_data(fcl_output_data),
     .input_error(fcl_input_error),
     .output_weights(fcl_output_weights)
+);
+
+softmax #(
+    .WIDTH(WIDTH),
+    .DIMENSION(FCL_OUTPUT_DIM)
+) softmax_inst (
+    .input_data(fcl_output_data),
+    .output_data(softmax_output)
 );
 
 logic [WIDTH*FCL_OUTPUT_DIM-1:0] lfsr_out;

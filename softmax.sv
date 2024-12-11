@@ -1,12 +1,12 @@
 module softmax
 #(
     parameter int WIDTH = 16,
-    parameter int INPUT_DIM = 10
+    parameter int DIMENSION = 10
 ) 
 
 (
-    input  logic signed [WIDTH-1:0] input_data [INPUT_DIM],
-    output logic signed [WIDTH-1:0] output_data [INPUT_DIM]
+    input  logic signed [WIDTH-1:0] input_data [DIMENSION],
+    output logic signed [WIDTH-1:0] output_data [DIMENSION]
 );
 
 logic signed [WIDTH-1:0] sum;
@@ -47,11 +47,11 @@ endfunction
 
 always_comb begin
     sum = 0;
-    for (int i = 0; i < INPUT_DIM; i++) begin
+    for (int i = 0; i < DIMENSION; i++) begin
         sum = sum + exp_taylor(input_data[i]);
     end
 
-    for (int i = 0; i < INPUT_DIM; i++) begin
+    for (int i = 0; i < DIMENSION; i++) begin
         output_data[i] = exp_taylor(input_data[i]) / sum;
     end
 end
