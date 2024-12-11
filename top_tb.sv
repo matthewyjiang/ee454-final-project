@@ -35,7 +35,8 @@ module top_tb;
     ) uut (
         .clk(clk),
         .reset(reset),
-        .input_data(input_data)
+        .input_data(input_data),
+        .fcl_output_error(output_error)
     );
 
     // Stimulus

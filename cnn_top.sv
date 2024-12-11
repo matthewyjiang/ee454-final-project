@@ -8,11 +8,17 @@ module cnn_top
 (
     input  logic clk,
     input  logic reset,
-    input  logic signed [WIDTH-1:0] input_data [FCL_INPUT_DIM]
+    input  logic signed [WIDTH-1:0] input_data [FCL_INPUT_DIM],
+    // temp for testbench
+
+    input logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]
 );
 
 logic signed [WIDTH-1:0] fcl_input_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
 logic signed [WIDTH-1:0] fcl_output_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM];
+logic signed [WIDTH-1:0] fcl_output_data [FCL_OUTPUT_DIM];
+logic signed [WIDTH-1:0] fcl_input_error [FCL_INPUT_DIM];
+// logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM];
 
 fully_connected_layer #(
     .WIDTH(WIDTH),
@@ -23,10 +29,10 @@ fully_connected_layer #(
     .clk(clk),
     .reset(reset),
     .input_data(input_data),
-    .output_error(),
+    .output_error(fcl_output_error),
     .input_weights(fcl_input_weights),
-    .output_data(),
-    .input_error(),
+    .output_data(fcl_output_data),
+    .input_error(fcl_input_error),
     .output_weights(fcl_output_weights)
 );
 
