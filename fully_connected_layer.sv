@@ -6,7 +6,6 @@ module fully_connected_layer
         parameter int LEARNING_RATE
     )
 (
-    input  logic clk,
     input  logic signed [WIDTH-1:0] input_data [INPUT_DIM],
     input  logic signed [WIDTH-1:0] output_error [OUTPUT_DIM],
     input  logic signed [WIDTH-1:0] input_weights [INPUT_DIM+1][OUTPUT_DIM],
