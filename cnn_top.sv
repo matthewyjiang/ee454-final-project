@@ -41,21 +41,21 @@ LFSR #(.WIDTH(WIDTH*FCL_OUTPUT_DIM)) lfsr (
 
 typedef enum {INIT, RUN} state_t;
 state_t state;
-logic [$clog2(FCL_INPUT_DIM)-1:0] j;
+logic [$clog2(FCL_INPUT_DIM)-1:0] i;
 
 always_ff @(posedge clk or negedge reset) begin
     if (!reset) begin
         state <= INIT;
-        j <= 0;
+        i <= 0;
     end else begin
         if(state == INIT) begin
             // Initialize weights and biases to zero (or random later)
-            for(int i = 0; i < FCL_OUTPUT_DIM; i++) begin
-                fcl_input_weights[j][i] <= lfsr_out[i*WIDTH +: WIDTH];
+            for(int j = 0; j < FCL_OUTPUT_DIM; j++) begin
+                fcl_input_weights[i][j] <= lfsr_out[j*WIDTH +: WIDTH];
             end
-            j <= j + 1;
+            i <= i + 1;
 
-            if(j == FCL_INPUT_DIM) begin
+            if(i == FCL_INPUT_DIM) begin
                 state <= RUN;
             end
         end
