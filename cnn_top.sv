@@ -13,9 +13,12 @@ module cnn_top
 (
     input  logic clk,
     input  logic reset,
-    input  logic signed [WIDTH-1:0] input_data [FCL_INPUT_DIM],
-    // temp for testbench
 
+    // need these to change every OTHER clock
+    input  logic signed [WIDTH-1:0] input_data [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH],
+    input  logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM], // assumed to be 1-hot encoded for now
+    
+    // temp for testbench
     input logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]
 );
 
@@ -35,8 +38,6 @@ logic signed [WIDTH-1:0] max_pool_input_gradient [CHANNELS][MAX_POOL_INPUT_DIM_H
 logic signed [WIDTH-1:0] input_3D_maxpool_matrix [CHANNELS][MAX_POOL_OUTPUT_DIM_HEIGHT][MAX_POOL_OUTPUT_DIM_WIDTH]; // the error that comes from fcl to be reshaped to 3D
 logic signed [WIDTH-1:0] fcl_input_error_3D_matrix [CHANNELS][MAX_POOL_OUTPUT_DIM_HEIGHT][MAX_POOL_OUTPUT_DIM_WIDTH]; // the error that comes from fcl that got reshaped to 3D
 logic signed [WIDTH-1:0] output_1D_fcl_matrix [MAX_POOL_OUTPUT_DIM_HEIGHT * MAX_POOL_OUTPUT_DIM_WIDTH * CHANNELS]; // the maxpool output that got flattened to 1D
-
-
 
 //signals for interfacing between flatten and fully connected layer
 logic signed [WIDTH-1:0] fcl_input_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM]; // the old weights of the fcl
@@ -86,8 +87,6 @@ max_pool_layer #(
     .input_gradient(max_pool_input_gradient)
 );
 
-
-
 flatten_layer #(
     .WIDTH(WIDTH),
     .CHANNELS(CHANNELS),
@@ -124,6 +123,19 @@ softmax #(
 ) softmax_inst (
     .input_data(fcl_output_data),
     .output_data(softmax_output)
+);
+
+// Instantiate a cross entropy loss module
+
+cross_entropy_loss #(
+    .WIDTH(WIDTH),
+    .DIMENSION(FCL_OUTPUT_DIM)
+) cross_entropy_loss_inst (
+    .clk(clk), // We need something at the output end to be clocked
+    .probs(softmax_output),
+    .labels(input_labels),
+    .input_error(fcl_output_error),
+    .loss()
 );
 
 logic [WIDTH*FCL_OUTPUT_DIM-1:0] lfsr_out;
