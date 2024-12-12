@@ -14,7 +14,6 @@ module fully_connected_layer
     output logic signed [WIDTH-1:0] output_data [OUTPUT_DIM],
     output logic signed [WIDTH-1:0] input_error [INPUT_DIM],
     output logic signed [WIDTH-1:0] output_weights [INPUT_DIM+1][OUTPUT_DIM]
-    
 );
     // weights is a 2D array of size (INPUT_DIM+1) x OUTPUT_DIM
     // bias is the first row of weights 
@@ -42,6 +41,7 @@ module fully_connected_layer
                 output_weights[j][i] = input_weights[j][i] + util_inst.fixed_point_multiply(input_data[j-1], util_inst.fixed_point_multiply(LEARNING_RATE, output_error[i]));
             end
         end
+        backward_done = 1;
         // Calculate input_error
         for (int i = 0; i < INPUT_DIM; i++) begin
             input_error[i] = 0;

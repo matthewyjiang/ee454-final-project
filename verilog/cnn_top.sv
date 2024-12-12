@@ -177,7 +177,7 @@ always_ff @(posedge clk or negedge reset) begin
 
             fcl_i <= fcl_i + 1;
 
-            if(fcl_i == FCL_INPUT_DIM+1) begin // Question: should this be FCL_INPUT_DIM or FCL_INPUT_DIM+1? since 0-indexing
+            if(fcl_i == FCL_INPUT_DIM) begin // Question: should this be FCL_INPUT_DIM or FCL_INPUT_DIM+1? since 0-indexing
                 state <= RUN;
             end
         end
