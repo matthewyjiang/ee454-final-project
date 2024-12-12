@@ -1,14 +1,15 @@
 module cnn_top 
 # (
-    parameter int WIDTH = 16, 
-    parameter int LEARNING_RATE,
+    parameter int WIDTH = 32, 
+    parameter int FIXED_POINT_INDEX = 16,
+    parameter int LEARNING_RATE = 1 << (FIXED_POINT_INDEX-2), 
     parameter int CHANNELS = 10,
     parameter int KERNEL_DIM = 3,
     parameter int FCL_INPUT_DIM = 4,
     parameter int FCL_OUTPUT_DIM = 10,
     parameter int MAX_POOL_STRIDE = 2,
     parameter int INPUT_DIM_WIDTH = 28,
-    parameter int INPUT_DIM_HEIGHT = 28,
+    parameter int INPUT_DIM_HEIGHT = 28
 ) 
 (
     input  logic clk,
@@ -44,19 +45,11 @@ logic signed [WIDTH-1:0] fcl_input_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM]; //
 logic signed [WIDTH-1:0] fcl_output_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM]; // the new weights of the fcl
 logic signed [WIDTH-1:0] fcl_output_data [FCL_OUTPUT_DIM]; // the output of the fcl to go to softmax
 logic signed [WIDTH-1:0] fcl_input_error [FCL_INPUT_DIM]; // the error that comes from the fcl to be reshaped to 3D for maxpool
-logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]; // the error that comes from the cross entropy loss to the fcl
+logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]; // the error that comes from the 
 
 logic signed [WIDTH-1:0] softmax_output [FCL_OUTPUT_DIM];
 
 // Instantiate a convolution module
-
-/*    input   logic signed [WIDTH-1:0] input_image [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH], // Convert from 8-bit input to WIDTH-bit fixed point
-    input   logic signed [WIDTH-1:0] output_error [NUM_KERNELS][OUTPUT_DIM_HEIGHT][OUTPUT_DIM_WIDTH], 
-    input   logic signed [WIDTH-1:0] input_kernels [NUM_KERNELS][KERNEL_DIM][KERNEL_DIM],
-    output  logic signed [WIDTH-1:0] output_data [NUM_KERNELS][OUTPUT_DIM_HEIGHT][OUTPUT_DIM_WIDTH], 
-    output  logic signed [WIDTH-1:0] output_kernels [NUM_KERNELS][KERNEL_DIM][KERNEL_DIM]
-*/
-
 
 conv_layer #(
     .WIDTH(WIDTH),
@@ -105,7 +98,8 @@ fully_connected_layer #(
     .WIDTH(WIDTH),
     .INPUT_DIM(FCL_INPUT_DIM),
     .OUTPUT_DIM(FCL_OUTPUT_DIM),
-    .LEARNING_RATE(LEARNING_RATE)
+    .LEARNING_RATE(LEARNING_RATE),
+    .FIXED_POINT_INDEX(FIXED_POINT_INDEX)
 ) fully_connected_layer_inst (
     .input_data(output_1D_fcl_matrix),
     .output_error(fcl_output_error),
