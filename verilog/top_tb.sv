@@ -4,15 +4,17 @@ module top_tb;
 
     // Parameters
     parameter int WIDTH = 32;
-    parameter int INPUT_DIM = 4;
-    parameter int OUTPUT_DIM = 2;
-    parameter int LEARNING_RATE = 1;
+    parameter int INPUT_DIM_HEIGHT = 28;
+    parameter int INPUT_DIM_WIDTH = 28;
+    parameter int OUTPUT_DIM = 10;
+    parameter int LEARNING_RATE = 0.25;
     parameter int PERIOD = 10;
+    parameter int TEST_LENGTH = 100;
 
     // Inputs
     logic clk;
     logic reset;
-    logic signed [WIDTH-1:0] input_data [INPUT_DIM];
+    logic signed [WIDTH-1:0] input_data [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH];
     logic signed [WIDTH-1:0] output_error [OUTPUT_DIM];
 
     // Outputs
@@ -26,6 +28,8 @@ module top_tb;
     end
 
     // Instantiate Unit Under Test (UUT)
+
+    
 
     cnn_top #(
         .WIDTH(WIDTH),
@@ -48,18 +52,19 @@ module top_tb;
         #10;
         reset = 1;
 
-        // Apply test vectors
-        input_data = '{2'sb01, 2'sb10, 2'sb11, 2'sb00};
-        output_error = '{2'sb01, 2'sb10};
-        #10;
+        for (int i = 0; i < TEST_LENGTH; i++) begin
+            
+            // read input data from mem file
+            $readmemh("mnist_images.mem", input_data);
 
-        input_data = '{2'sb11, 2'sb00, 2'sb01, 2'sb10};
-        output_error = '{2'sb11, 2'sb00};
-        #10;
+            // Generate random output error
+            for (int j = 0; j < OUTPUT_DIM; j++) begin
+                output_error[j] = $random;
+            end
 
-        input_data = '{2'sb00, 2'sb01, 2'sb10, 2'sb11};
-        output_error = '{2'sb10, 2'sb01};
-        #10;
+            // Wait for some time
+            #10;
+        end
 
         #1000;
 
