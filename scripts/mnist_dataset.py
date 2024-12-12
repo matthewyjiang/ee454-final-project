@@ -4,7 +4,7 @@ import os
 import kagglehub
 
 # Download latest version
-path = "mnist"
+path = "../mnist"
 
 print("Path to dataset files:", path)
 
@@ -41,9 +41,22 @@ print("Train Labels Shape:", train_labels.shape)
 print("Test Images Shape:", test_images.shape)
 print("Test Labels Shape:", test_labels.shape)
 
-# print the first image as a matrix
+# Convert the first 100 images into Verilog test bench format
+def convert_to_verilog(image):
+    """
+    Converts a single image (28x28) into Verilog test bench format.
+    """
+    verilog_lines = []
+    for row in image:
+        line = "'{" + ", ".join([f"32'sh{int(pixel * 256):04X}0000" for pixel in row]) + "}"
+        verilog_lines.append(line)
+    return "{ " + ", ".join(verilog_lines) + " };"
 
-for i in range(100):
-    
-    print(train_images[i])
-    print("")
+# Save the first 100 images to a file
+output_file = "mnist_images_verilog.txt"
+with open(output_file, "w") as f:
+    for i in range(100):
+        verilog_code = convert_to_verilog(train_images[i] / 255.0)  # Normalize the 8-bit values to [0, 1]
+        f.write(f"input_image = {verilog_code}\n\n")
+
+print(f"Converted first 100 images saved to {output_file}")
