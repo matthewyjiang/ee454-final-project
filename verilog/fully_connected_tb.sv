@@ -50,14 +50,14 @@ module fully_connected_tb;
         reset = 1;
 
         // Apply test vectors
-        input_data = '{2'b00, 2'b01, 2'b10, 2'b11}; // Assign array with a single value
-        #PERIOD;
-        output_error = `{2'b00, 2'b01};
-        #PERIOD;
-        input_data = '{2'b01, 2'b01, 2'b01, 2'b01};
-        #PERIOD;
-        output_error = `{2'b01, 2'b00};
-        #PERIOD;
+        // input_data = '{2'b00, 2'b01, 2'b10, 2'b11}; // Assign array with a single value
+        // #PERIOD;
+        // output_error = `{2'b00, 2'b01};
+        // #PERIOD;
+        // input_data = '{2'b01, 2'b01, 2'b01, 2'b01};
+        // #PERIOD;
+        // output_error = `{2'b01, 2'b00};
+        // #PERIOD;
         // input_data = '{default: 32'h0};  // SystemVerilog array assignment
 
         // Finish simulation

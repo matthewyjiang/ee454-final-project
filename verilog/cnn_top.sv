@@ -5,7 +5,6 @@ module cnn_top
     parameter int LEARNING_RATE = 1 << (FIXED_POINT_INDEX-2), 
     parameter int CHANNELS = 10,
     parameter int KERNEL_DIM = 3,
-    parameter int FCL_INPUT_DIM = 4,
     parameter int FCL_OUTPUT_DIM = 10,
     parameter int MAX_POOL_STRIDE = 2,
     parameter int INPUT_DIM_WIDTH = 28,
@@ -17,16 +16,18 @@ module cnn_top
 
     // need these to change every OTHER clock
     input  logic signed [WIDTH-1:0] input_data [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH],
-    input  logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM], // assumed to be 1-hot encoded for now
+    input  logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM] // assumed to be 1-hot encoded for now
     
     // temp for testbench
-    input logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]
+    // input logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]
 );
 
-localparam MAX_POOL_INPUT_DIM_WIDTH = INPUT_DIM_WIDTH - KERNEL_DIM + 1;
+localparam MAX_POOL_INPUT_DIM_WIDTH = INPUT_DIM_WIDTH - KERNEL_DIM + 1; // = 26
 localparam MAX_POOL_INPUT_DIM_HEIGHT = INPUT_DIM_HEIGHT - KERNEL_DIM + 1;
-localparam MAX_POOL_OUTPUT_DIM_HEIGHT = MAX_POOL_INPUT_DIM_HEIGHT / MAX_POOL_STRIDE;
+localparam MAX_POOL_OUTPUT_DIM_HEIGHT = MAX_POOL_INPUT_DIM_HEIGHT / MAX_POOL_STRIDE; // = 13
 localparam MAX_POOL_OUTPUT_DIM_WIDTH = MAX_POOL_INPUT_DIM_WIDTH / MAX_POOL_STRIDE;
+
+localparam FCL_INPUT_DIM = MAX_POOL_OUTPUT_DIM_HEIGHT * MAX_POOL_OUTPUT_DIM_WIDTH * CHANNELS;
 
 
 //signals for interfacing between conv and maxpool
@@ -38,7 +39,7 @@ logic signed [WIDTH-1:0] max_pool_input_gradient [CHANNELS][MAX_POOL_INPUT_DIM_H
 //signals for interfacing between maxpool and flatten
 logic signed [WIDTH-1:0] input_3D_maxpool_matrix [CHANNELS][MAX_POOL_OUTPUT_DIM_HEIGHT][MAX_POOL_OUTPUT_DIM_WIDTH]; // the error that comes from fcl to be reshaped to 3D
 logic signed [WIDTH-1:0] fcl_input_error_3D_matrix [CHANNELS][MAX_POOL_OUTPUT_DIM_HEIGHT][MAX_POOL_OUTPUT_DIM_WIDTH]; // the error that comes from fcl that got reshaped to 3D
-logic signed [WIDTH-1:0] output_1D_fcl_matrix [MAX_POOL_OUTPUT_DIM_HEIGHT * MAX_POOL_OUTPUT_DIM_WIDTH * CHANNELS]; // the maxpool output that got flattened to 1D
+logic signed [WIDTH-1:0] output_1D_fcl_matrix [FCL_INPUT_DIM]; // the maxpool output that got flattened to 1D
 
 //signals for interfacing between flatten and fully connected layer
 logic signed [WIDTH-1:0] fcl_input_weights [FCL_INPUT_DIM+1][FCL_OUTPUT_DIM]; // the old weights of the fcl
@@ -72,7 +73,8 @@ max_pool_layer #(
     .WIDTH(WIDTH),
     .STRIDE(MAX_POOL_STRIDE),
     .INPUT_DIM_HEIGHT(MAX_POOL_INPUT_DIM_HEIGHT),
-    .OUTPUT_DIM_HEIGHT(MAX_POOL_INPUT_DIM_WIDTH)
+    .INPUT_DIM_WIDTH(MAX_POOL_INPUT_DIM_WIDTH),
+    .CHANNELS(CHANNELS)
 ) max_pool_layer_inst (
     .input_feature_map(conv_layer_output_data),
     .output_gradient(fcl_input_error_3D_matrix),
@@ -80,11 +82,11 @@ max_pool_layer #(
     .input_gradient(max_pool_input_gradient)
 );
 
-flatten_layer #(
+flatten #(
     .WIDTH(WIDTH),
     .CHANNELS(CHANNELS),
     .DIM3_WIDTH(MAX_POOL_OUTPUT_DIM_WIDTH),
-    .DIM3_HEIGHT(MAX_POOL_OUTPUT_DIM_HEIGHT),
+    .DIM3_HEIGHT(MAX_POOL_OUTPUT_DIM_HEIGHT)
 ) flatten_layer_inst (
     .input_3D_maxpool_matrix(input_3D_maxpool_matrix),
     .input_1D_fcl_matrix(fcl_input_error),
@@ -125,7 +127,6 @@ cross_entropy_loss #(
     .WIDTH(WIDTH),
     .DIMENSION(FCL_OUTPUT_DIM)
 ) cross_entropy_loss_inst (
-    .clk(clk), // We need something at the output end to be clocked
     .probs(softmax_output),
     .labels(input_labels),
     .input_error(fcl_output_error),
