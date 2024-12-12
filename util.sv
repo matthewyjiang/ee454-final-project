@@ -1,5 +1,5 @@
 package utilities;
-    virtual class util#(parameter WIDTH, FIXED_POINT_INDEX);
+    class util#(parameter WIDTH, FIXED_POINT_INDEX);
         function logic [WIDTH-1:0] fixed_point_multiply (
             input logic [WIDTH-1:0] a,
             input logic [WIDTH-1:0] b
@@ -8,10 +8,7 @@ package utilities;
             logic [2*WIDTH-1:0] product;
             logic [WIDTH-1:0] result;
             product = a * b;
-            product = product >> FIXED_POINT_INDEX;
-
-            product = product + (1 << (FIXED_POINT_INDEX-1));
-            product = product >> FIXED_POINT_INDEX;
+            product = product >>> FIXED_POINT_INDEX;
             
             result = product;
             return result;  
