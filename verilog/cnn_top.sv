@@ -60,6 +60,8 @@ logic softmax_start;
 logic softmax_busy;
 logic signed [WIDTH-1:0] softmax_input_clipped [FCL_OUTPUT_DIM];
 
+logic signed [$clog2(NUM_IMAGES)-1:0] correct_count;
+
 
 // Instantiate a convolution module
 
@@ -164,6 +166,8 @@ typedef enum {LFSR_INIT, CONV_INIT, FCL_INIT, RUN, UPDATE_WEIGHTS, WAITING} stat
 state_t state;
 logic [$clog2(FCL_INPUT_DIM):0] fcl_i;
 logic [$clog2(CHANNELS):0] conv_i;
+logic signed [WIDTH-1:0] max_value;
+logic [$clog2(FCL_OUTPUT_DIM)-1:0] max_index;
 
 always_comb begin
     for (int i = 0; i < FCL_OUTPUT_DIM; i++) begin
@@ -244,6 +248,24 @@ always_ff @(posedge clk or negedge reset) begin
                     fcl_input_weights <= fcl_output_weights;
                     conv_layer_input_kernels <= conv_layer_output_kernels;
                 end
+                
+                // update correct count
+                max_index = 0;
+                max_value = fcl_output_data[0];
+
+                for (int i = 1; i < FCL_OUTPUT_DIM; i++) begin
+                    if (fcl_output_data[i] > max_value) begin
+                        max_value = fcl_output_data[i];
+                        max_index = i;                 
+                    end
+                end
+
+                if (input_labels[max_index] == 1) begin
+                    correct_count <= correct_count + 1;
+                end
+
+                // display accuracy
+                $display("Accuracy: %d/%d", correct_count, input_index);
 
                 // change the image
                 input_index <= input_index + 1;
