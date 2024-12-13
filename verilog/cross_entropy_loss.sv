@@ -8,8 +8,6 @@ module cross_entropy_loss #(
     output logic signed [WIDTH-1:0] loss
 );
 
-    // Do we want to compute loss? Maybe don't
-
     // Compute input error
     always_comb  begin
         for (int i = 0; i < DIMENSION; i++) begin
