@@ -9,9 +9,8 @@ module LFSR #(parameter WIDTH=16)(
     // Loop through each of the 16 LFSRs
     always_ff @(posedge clk or negedge rst) begin
         if (!rst) begin
-            // Initialize all 16 LFSRs to their reset values (all 4'hF)
             for (int i = 0; i < WIDTH; i++) begin
-                op[i] <= (i+WIDTH) >> 1; // Set each LFSR to 4'hF on reset
+                op[i] <= (i * 3 + 7) % 19;
                 out[i] <= op[i][3]; // Output the initial value
             end
         end else begin

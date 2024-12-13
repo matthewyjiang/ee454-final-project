@@ -136,7 +136,7 @@ cross_entropy_loss #(
     .WIDTH(WIDTH),
     .DIMENSION(FCL_OUTPUT_DIM)
 ) cross_entropy_loss_inst (
-    .probs(softmax_output),
+    .probs(fcl_output_data),
     .labels(input_labels),
     .input_error(fcl_output_error),
     .loss()
@@ -171,7 +171,7 @@ always_ff @(posedge clk or negedge reset) begin
                 // Initialize kernels to random (am assuming k^2 < FCL_OUTPUT_DIM -- if not, instantiate new lfsr for kernel init)
                 for (int j = 0; j < KERNEL_DIM; j++) begin
                     for (int k = 0; k < KERNEL_DIM; k++) begin
-                        conv_layer_input_kernels[conv_i][j][k] <= lfsr_out[j*KERNEL_DIM*WIDTH + k*WIDTH +: WIDTH];
+                        conv_layer_input_kernels[conv_i][j][k] <= (lfsr_out[j*KERNEL_DIM*WIDTH + k*WIDTH +: WIDTH]) >> (WIDTH/2+1);
                     end
                 end
 
@@ -185,7 +185,7 @@ always_ff @(posedge clk or negedge reset) begin
             FCL_INIT: begin
                 // Initialize weights and biases to random
                 for (int j = 0; j < FCL_OUTPUT_DIM; j++) begin
-                    fcl_input_weights[fcl_i][j] <= lfsr_out[j*WIDTH +: WIDTH];
+                    fcl_input_weights[fcl_i][j] <= (lfsr_out[j*WIDTH +: WIDTH]) >> (WIDTH/2+1);
                 end
 
                 fcl_i <= fcl_i + 1;

@@ -1,7 +1,7 @@
 import numpy as np
 import struct
 import os
-import kagglehub
+# import kagglehub
 
 # Download latest version
 path = "../mnist"
@@ -44,11 +44,11 @@ print("Test Labels Shape:", test_labels.shape)
 # Save the first 100 images to a .mem file
 mem_file = "mnist_images.mem"
 with open(mem_file, "w") as f:
-    for i in range(100):
+    for i in range(5):
         verilog_lines = []
         for row in train_images[i] / 255.0:  # Normalize the 8-bit values to [0, 1]
-            row_data = ", ".join([f"{int(pixel * 256):04X}0000" for pixel in row])  # Scale and convert to hex
+            row_data = "\n".join([f"{int(pixel * 256):04X}0000" for pixel in row])  # Scale and convert to hex
             verilog_lines.append(row_data)
-        f.write("\n".join(verilog_lines) + "\n\n")
+        f.write("\n".join(verilog_lines) + "\n")
 
 print(f"Converted first 100 images saved to {mem_file}")
