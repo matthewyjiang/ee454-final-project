@@ -56,7 +56,8 @@ module exp_taylor #(
         COMPUTE_POWER,
         COMPUTE_TERM,
         ADD_TERM,
-        DONE
+        DONE,
+        NEGATIVE_TERM
     } state_t;
 
     state_t state, next_state;
@@ -81,10 +82,6 @@ module exp_taylor #(
     always_ff @(posedge clk or negedge reset) begin
         if (!reset) begin
             state <= IDLE;
-            current_term <= 0;
-            power <= ONE;
-            sum <= ONE;
-            done <= 0;
         end else begin
             state <= next_state;
 
@@ -95,7 +92,7 @@ module exp_taylor #(
                     if (start) begin
                         current_term <= 1; // Start from the second term
                         power <= ONE;      // Initialize x^0 = 1
-                        sum <= 0;        // Initialize sum with the first term
+                        sum <= ONE;        // Initialize sum with the first term
                         done <= 0;
                         term <= 0;
                         busy <= 1;
@@ -103,7 +100,11 @@ module exp_taylor #(
                 end
 
                 COMPUTE_POWER: begin
-                    power <= util_inst.fixed_point_multiply(power, x);
+                    if (x < 0) begin
+                        power <= util_inst.fixed_point_multiply(power, -x);
+                    end else begin
+                        power <= util_inst.fixed_point_multiply(power, x);
+                    end
                 end
 
                 COMPUTE_TERM: begin
@@ -118,23 +119,43 @@ module exp_taylor #(
                     if (div_done) begin
                         if (div_valid)
                             term <= div_val;
+                        div_start <= 0;
                     end
 
                 end
 
                 ADD_TERM: begin
                     // Add term to the sum
-                    sum <= sum + term;
+                    sum <= sum + div_val;
                     
                     // Check if done or move to the next term
                     if (current_term < TERMS) begin
                         current_term <= current_term + 1;
                     end
                 end
+
+                NEGATIVE_TERM: begin
+                    // get the reciprocal of the term for negative power
+                    div_a <= ONE;
+                    div_b <= term;
+                    if (div_busy) begin
+                        div_start <= 0;
+                    end else begin
+                        div_start <= 1;
+                    end
+
+                    if (div_done) begin
+                        if (div_valid)
+                            sum <= div_val;
+                        div_start <= 0;
+                    end
+                end
+
                 DONE: begin
                     result <= sum;    // Output the final result
                     // display sum in fixed point
-                    
+                    $display("Fixed-point value: %0d.%0d", sum >>> FRAC, (sum & ((1 << FRAC) - 1)) * 100 / (1 << FRAC));
+
                     done <= 1;
                     if (div_busy)
                         busy <= 1;
@@ -159,15 +180,25 @@ module exp_taylor #(
             end
 
             COMPUTE_TERM: begin
-                if (div_done) 
+                if (div_done)
                     next_state = ADD_TERM;
+            end
+
+            NEGATIVE_TERM: begin
+                if (div_done)
+                    next_state = DONE;
             end
 
             ADD_TERM: begin
                 if (current_term < TERMS)
                     next_state = COMPUTE_POWER;
-                else
-                    next_state = DONE;
+                else begin
+                    if (x < 0)
+                        next_state = NEGATIVE_TERM;
+                    else
+                        next_state = DONE;
+                end
+                    
             end
                 
             DONE: begin

@@ -10,7 +10,7 @@ module cnn_top
     parameter int INPUT_DIM_WIDTH = 28,
     parameter int INPUT_DIM_HEIGHT = 28,
     parameter int NUM_IMAGES = 10000,
-    parameter logic signed [WIDTH-1:0] CLIP_VALUE = 21 << FIXED_POINT_INDEX
+    parameter logic signed [WIDTH-1:0] CLIP_VALUE = 20 << FIXED_POINT_INDEX
 ) 
 (
     input  logic clk,
