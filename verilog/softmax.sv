@@ -12,7 +12,8 @@ module softmax
     input  logic signed [WIDTH-1:0] input_data [DIMENSION],
     input  logic start,
     output logic signed [WIDTH-1:0] output_data [DIMENSION],
-    output logic done
+    output logic done,
+    output logic busy
 );
 
 logic signed [WIDTH-1:0] sum;
@@ -69,18 +70,21 @@ always_ff @(posedge clk or negedge reset) begin
     // test division
     if (!reset) begin
         state <= INIT;
+        busy <= 0;
+        done <= 0;
     end
     else begin
         case (state)
             INIT: begin
                 sum <= 0;
                 i <= 0;
+                done <= 0;
                 if (start) begin
                     state <= COMPUTE;
+                    busy <= 1;
                 end
             end
             COMPUTE: begin
-                done <= 0;
                 if (i < DIMENSION) begin
                     exp_taylor_input_x <= input_data[i];
                     if (exp_taylor_busy) begin
@@ -124,6 +128,8 @@ always_ff @(posedge clk or negedge reset) begin
             end
             DONE: begin
                 done <= 1;
+                busy <= 0;
+                state <= INIT;
             end
         endcase
     end

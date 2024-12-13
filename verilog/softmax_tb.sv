@@ -15,6 +15,7 @@ module softmax_tb;
     logic signed [WIDTH-1:0] b [4];
     logic start;
     logic done;
+    logic busy;
     
     softmax #(.WIDTH(WIDTH), .DIMENSION(4), .FIXED_POINT_INDEX(FIXED_POINT_INDEX)) softmax_inst (
         .clk(clk),
@@ -22,7 +23,8 @@ module softmax_tb;
         .start(start),
         .input_data(a),
         .output_data(b),
-        .done(done)
+        .done(done),
+        .busy(busy)
 
     );
 
@@ -52,9 +54,9 @@ module softmax_tb;
         a[3] = 32'h00040000; // 4.0 in fixed-point
         #20;
         start = 1;
-        #100;
+        #10;
+        start = 0;
         wait(done);
-        $stop;
 
         a[0] = 32'h00040000; // 4.0 in fixed-point
         a[1] = 32'h00030000; // 3.0 in fixed-point
@@ -62,6 +64,8 @@ module softmax_tb;
         a[3] = 32'h00010000; // 1.0 in fixed-point
         #20;
         start = 1;
+        #10;
+        start = 0;
         wait(done);
 
         a[0] = 32'h00000000; // 0.0 in fixed-point
@@ -70,6 +74,8 @@ module softmax_tb;
         a[3] = 32'h00000000; // 0.0 in fixed-point
         #20;
         start = 1;
+        #10;
+        start = 0;
         wait(done);
 
        

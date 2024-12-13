@@ -49,6 +49,9 @@ logic signed [WIDTH-1:0] fcl_input_error [FCL_INPUT_DIM]; // the error that come
 logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]; // the error that comes from the 
 
 logic signed [WIDTH-1:0] softmax_output [FCL_OUTPUT_DIM];
+logic softmax_start;
+logic softmax_done;
+logic softmax_output;
 
 // Instantiate a convolution module
 
@@ -114,11 +117,17 @@ fully_connected_layer #(
 // Instantiate a softmax module
 
 softmax #(
-    .WIDTH(WIDTH),
-    .DIMENSION(FCL_OUTPUT_DIM)
+    .WIDTH(WIDTH), 
+    .DIMENSION(4), 
+    .FIXED_POINT_INDEX(FIXED_POINT_INDEX)
 ) softmax_inst (
+    .clk(clk),
+    .reset(reset),
+    .start(softmax_start),
     .input_data(fcl_output_data),
-    .output_data(softmax_output)
+    .output_data(softmax_output),
+    .done(softmax_done)
+
 );
 
 // Instantiate a cross entropy loss module
@@ -141,7 +150,7 @@ LFSR #(.WIDTH(WIDTH*FCL_OUTPUT_DIM)) lfsr (
     .out(lfsr_out)
 );
 
-typedef enum {LFSR_INIT, CONV_INIT, FCL_INIT, RUN} state_t;
+typedef enum {LFSR_INIT, CONV_INIT, FCL_INIT, RUN, WAITING} state_t;
 state_t state;
 logic [$clog2(FCL_INPUT_DIM):0] fcl_i;
 logic [$clog2(CHANNELS):0] conv_i;
@@ -150,44 +159,66 @@ always_ff @(posedge clk or negedge reset) begin
     if (!reset) begin
         state <= LFSR_INIT;
     end 
-    else begin 
-        if (state == LFSR_INIT) begin
-            state <= CONV_INIT;
-            conv_i <= 0;
-            fcl_i <= 0;
-        end
-        else if (state == CONV_INIT) begin
-            // Initialize kernels to random (am assuming k^2 < FCL_OUTPUT_DIM -- if not, instantiate new lfsr for kernel init)
-            for(int j = 0; j < KERNEL_DIM; j++) begin
-                for(int k = 0; k < KERNEL_DIM; k++) begin
-                    conv_layer_input_kernels[conv_i][j][k] <= lfsr_out[j*KERNEL_DIM*WIDTH + k*WIDTH +: WIDTH];
+    else begin
+        case (state)
+            LFSR_INIT: begin
+                state <= CONV_INIT;
+                conv_i <= 0;
+                fcl_i <= 0;
+            end
+
+            CONV_INIT: begin
+                // Initialize kernels to random (am assuming k^2 < FCL_OUTPUT_DIM -- if not, instantiate new lfsr for kernel init)
+                for (int j = 0; j < KERNEL_DIM; j++) begin
+                    for (int k = 0; k < KERNEL_DIM; k++) begin
+                        conv_layer_input_kernels[conv_i][j][k] <= lfsr_out[j*KERNEL_DIM*WIDTH + k*WIDTH +: WIDTH];
+                    end
+                end
+
+                conv_i <= conv_i + 1;
+
+                if (conv_i == CHANNELS-1) begin
+                    state <= FCL_INIT;
                 end
             end
 
-            conv_i <= conv_i + 1;
+            FCL_INIT: begin
+                // Initialize weights and biases to random
+                for (int j = 0; j < FCL_OUTPUT_DIM; j++) begin
+                    fcl_input_weights[fcl_i][j] <= lfsr_out[j*WIDTH +: WIDTH];
+                end
 
-            if (conv_i == CHANNELS-1) begin
-                state <= FCL_INIT;
-            end
-        end
-        else if (state == FCL_INIT) begin
-            // Initialize weights and biases to random
-            for(int j = 0; j < FCL_OUTPUT_DIM; j++) begin
-                fcl_input_weights[fcl_i][j] <= lfsr_out[j*WIDTH +: WIDTH];
+                fcl_i <= fcl_i + 1;
+
+                if (fcl_i == FCL_INPUT_DIM) begin // Question: should this be FCL_INPUT_DIM or FCL_INPUT_DIM+1? since 0-indexing
+                    state <= RUN;
+                end
             end
 
-            fcl_i <= fcl_i + 1;
-
-            if(fcl_i == FCL_INPUT_DIM) begin // Question: should this be FCL_INPUT_DIM or FCL_INPUT_DIM+1? since 0-indexing
-                state <= RUN;
+            RUN: begin
+                // update weights
+                fcl_input_weights <= fcl_output_weights;
+                conv_layer_input_kernels <= conv_layer_output_kernels;
+                state <= WAITING;
             end
-        end
-        else begin // (state == RUN)
-            // update weights
-            fcl_input_weights <= fcl_output_weights;
-            conv_layer_input_kernels <= conv_layer_output_kernels;
-        end
+
+            WAITING: begin
+                // wait for softmax to finish
+                if (!softmax_busy) begin
+                    softmax_start <= 1;
+                end else begin
+                    softmax_start <= 0;
+                end
+
+                if (softmax_done) begin
+                    state <= RUN;
+                end
+
+            end
+
+        endcase
     end
+
 end
 
 endmodule
