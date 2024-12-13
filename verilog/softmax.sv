@@ -3,7 +3,7 @@ module softmax
     parameter int WIDTH = 16,
     parameter int DIMENSION = 10,
     parameter int FIXED_POINT_INDEX = 8,
-    parameter int TERMS = 7
+    parameter int TERMS = 12
 ) 
 
 (
@@ -48,6 +48,7 @@ logic signed [WIDTH-1:0] exp_taylor_input_x ;
 logic signed [WIDTH-1:0] exp_taylor_result ;
 logic exp_taylor_start;
 logic exp_taylor_done;
+logic exp_taylor_busy;
 
 exp_taylor #(.WIDTH(WIDTH), .FIXED_POINT_INDEX(FIXED_POINT_INDEX), .TERMS(TERMS)) exp_taylor_inst (
     .clk(clk),
@@ -55,7 +56,8 @@ exp_taylor #(.WIDTH(WIDTH), .FIXED_POINT_INDEX(FIXED_POINT_INDEX), .TERMS(TERMS)
     .start(exp_taylor_start),
     .x(exp_taylor_input_x),
     .result(exp_taylor_result),
-    .done(exp_taylor_done)
+    .done(exp_taylor_done),
+    .busy(exp_taylor_busy)
 );
 
 
@@ -81,10 +83,14 @@ always_ff @(posedge clk or negedge reset) begin
                 done <= 0;
                 if (i < DIMENSION) begin
                     exp_taylor_input_x <= input_data[i];
-                    exp_taylor_start <= 1;
-                    if (exp_taylor_done) begin
+                    if (exp_taylor_busy) begin
+                        exp_taylor_start <= 0;
+                    end else begin
+                        exp_taylor_start <= 1;
+                    end
+                    if (exp_taylor_done && !exp_taylor_busy) begin
                         exp_result[i] <= exp_taylor_result;
-                        sum <= sum + exp_result[i];
+                        sum <= sum + exp_taylor_result;
                         exp_taylor_start <= 0;
                         i <= i + 1;
                     end
@@ -98,7 +104,6 @@ always_ff @(posedge clk or negedge reset) begin
                 norm_div_a <= exp_result[i];
                 norm_div_b <= sum;
                 norm_div_start <= 1;
-                i <= i + 1;
                 state <= NORM_DIV_WAITING;
             end
             NORM_DIV_WAITING: begin
@@ -107,7 +112,9 @@ always_ff @(posedge clk or negedge reset) begin
                     if (i < DIMENSION) begin
                         if (norm_div_valid) begin
                             output_data[i] <= norm_div_val;
+                            $display("output_data[%0d]: %0d.%0d", i,norm_div_val >>> FIXED_POINT_INDEX, (norm_div_val & ((1 << FIXED_POINT_INDEX) - 1)) * 10000 / (1 << FIXED_POINT_INDEX));
                             state <= NORM_DIV;
+                            i <= i + 1;
                         end
                     end
                     else begin

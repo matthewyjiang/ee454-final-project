@@ -10,7 +10,8 @@ module exp_taylor #(
     input  logic start,                 // Start signal
     input  logic signed [WIDTH-1:0] x,  // Input value in Q(FRAC) format
     output logic signed [WIDTH-1:0] result, // Result in Q(FRAC) format
-    output logic done                   // Done signal
+    output logic done,                   // Done signal
+    output logic busy
 );
     import utilities::*;
     util#(WIDTH, FIXED_POINT_INDEX) util_inst = new();
@@ -45,18 +46,18 @@ module exp_taylor #(
     logic signed [WIDTH-1:0] sum;       // Accumulated sum in Q(FRAC)
     logic signed [WIDTH-1:0] term;      // Current term in Q(FRAC)
     logic [31:0] factorial_val;         // Factorial value (integer)
-    logic busy;                         // Busy flag for state machine
 
     // Fixed-point representation of 1.0
     localparam int FRAC = FIXED_POINT_INDEX;
     localparam signed [WIDTH-1:0] ONE = (1 <<< FRAC);
 
     // State machine states
-    typedef enum logic [1:0] {
+    typedef enum logic [2:0] {
         IDLE,
         COMPUTE_POWER,
         COMPUTE_TERM,
-        ADD_TERM
+        ADD_TERM,
+        DONE
     } state_t;
 
     state_t state, next_state;
@@ -91,11 +92,14 @@ module exp_taylor #(
             // Update signals based on state
             case (state)
                 IDLE: begin
+                    done <= 0;
                     if (start) begin
                         current_term <= 1; // Start from the second term
                         power <= ONE;      // Initialize x^0 = 1
                         sum <= 0;        // Initialize sum with the first term
                         done <= 0;
+                        term <= 0;
+                        busy <= 1;
                     end
                 end
 
@@ -105,14 +109,16 @@ module exp_taylor #(
 
                 COMPUTE_TERM: begin
                     div_a <= power;
-                    div_b <= factorial(current_term);;
-                    div_start <= 1;
+                    div_b <= factorial(current_term);
+                    if (div_busy) begin
+                        div_start <= 0;
+                    end else begin
+                        div_start <= 1;
+                    end
 
                     if (div_done) begin
                         if (div_valid)
                             term <= div_val;
-                            $display("term: %0d.%0d", term >>> FRAC, (term & ((1 << FRAC) - 1)) * 10000 / (1 << FRAC));
-                        div_start <= 0;
                     end
 
                 end
@@ -122,15 +128,21 @@ module exp_taylor #(
                     sum <= sum + term;
                     
                     // Check if done or move to the next term
-                    if (current_term == TERMS - 1) begin
-                        result <= sum;    // Output the final result
-                        // display sum in fixed point
-                        $display("sum: %0d.%0d", sum >>> FRAC, (sum & ((1 << FRAC) - 1)) * 10000 / (1 << FRAC));
-                        done <= 1;        // Signal completion
-                    end else begin
+                    if (current_term < TERMS) begin
                         current_term <= current_term + 1;
                     end
                 end
+                DONE: begin
+                    result <= sum;    // Output the final result
+                    // display sum in fixed point
+                    
+                    done <= 1;
+                    if (div_busy)
+                        busy <= 1;
+                    else
+                        busy <= 0;
+                end
+
             endcase
         end
     end
@@ -153,8 +165,15 @@ module exp_taylor #(
             end
 
             ADD_TERM: begin
-                if (current_term < TERMS - 1)
+                if (current_term < TERMS)
                     next_state = COMPUTE_POWER;
+                else
+                    next_state = DONE;
+            end
+                
+            DONE: begin
+                if (div_busy)
+                    next_state = DONE;
                 else
                     next_state = IDLE;
             end
