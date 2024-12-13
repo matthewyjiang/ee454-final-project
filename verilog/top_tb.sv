@@ -41,7 +41,7 @@ module top_tb;
     initial begin
         // Initialize Inputs
 
-        string filename = "C:/Users/cl917/OneDrive/Documents/Classes/ee454/ee454-final-project/scripts/mnist_images.mem";
+        string filename = "verilog/test.mem";
         $readmemh(filename, mem);
         
         reset = 1;
