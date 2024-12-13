@@ -3,7 +3,7 @@ module softmax
     parameter int WIDTH = 16,
     parameter int DIMENSION = 10,
     parameter int FIXED_POINT_INDEX = 8,
-    parameter int TERMS = 10
+    parameter int TERMS = 7
 ) 
 
 (
