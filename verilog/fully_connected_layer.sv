@@ -41,7 +41,7 @@ module fully_connected_layer
                 output_weights[j][i] = input_weights[j][i] + util_inst.fixed_point_multiply(input_data[j-1], util_inst.fixed_point_multiply(LEARNING_RATE, output_error[i]));
             end
         end
-        backward_done = 1;
+
         // Calculate input_error
         for (int i = 0; i < INPUT_DIM; i++) begin
             input_error[i] = 0;

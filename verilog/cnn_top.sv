@@ -51,7 +51,7 @@ logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]; // the error that co
 logic signed [WIDTH-1:0] softmax_output [FCL_OUTPUT_DIM];
 logic softmax_start;
 logic softmax_done;
-logic softmax_output;
+logic softmax_busy;
 
 // Instantiate a convolution module
 
@@ -118,7 +118,7 @@ fully_connected_layer #(
 
 softmax #(
     .WIDTH(WIDTH), 
-    .DIMENSION(4), 
+    .DIMENSION(FCL_OUTPUT_DIM), 
     .FIXED_POINT_INDEX(FIXED_POINT_INDEX)
 ) softmax_inst (
     .clk(clk),
@@ -126,8 +126,8 @@ softmax #(
     .start(softmax_start),
     .input_data(fcl_output_data),
     .output_data(softmax_output),
-    .done(softmax_done)
-
+    .done(softmax_done),
+    .busy(softmax_busy)
 );
 
 // Instantiate a cross entropy loss module
