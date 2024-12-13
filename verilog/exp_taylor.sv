@@ -153,8 +153,6 @@ module exp_taylor #(
 
                 DONE: begin
                     result <= sum;    // Output the final result
-                    // display sum in fixed point
-                    $display("Fixed-point value: %0d.%0d", sum >>> FRAC, (sum & ((1 << FRAC) - 1)) * 100 / (1 << FRAC));
 
                     done <= 1;
                     if (div_busy)
@@ -197,8 +195,7 @@ module exp_taylor #(
                         next_state = NEGATIVE_TERM;
                     else
                         next_state = DONE;
-                end
-                    
+                end 
             end
                 
             DONE: begin
