@@ -41,49 +41,49 @@ print("Train Labels Shape:", train_labels.shape)
 print("Test Images Shape:", test_images.shape)
 print("Test Labels Shape:", test_labels.shape)
 
-num_train = 1
+num_train = 100
 
 # Save the first 100 images to a .mem file
-# mem_file = "mnist_images.mem"
-# with open(mem_file, "w") as f:
-#     for i in range(num_train):
-#         verilog_lines = []
-#         for row in train_images[i] / 255.0:  # Normalize the 8-bit values to [0, 1]
-#             row_data = "\n".join([f"{int(pixel * 256):08X}0000" for pixel in row])  # Scale and convert to hex
-#             verilog_lines.append(row_data)
-#         f.write("\n".join(verilog_lines) + "\n")
-
-# # Save labels to .mem file
-# mem_file = "mnist_labels.mem"
-# with open(mem_file, "w") as f:
-#     for i in range(num_train):
-#         label = train_labels[i]
-#         one_hot = [0] * 10
-#         one_hot[label] = 1
-#         label = "\n".join([f"{bit:08X}0000" for bit in one_hot])
-#         f.write(f"{label}\n")
-
-header = "CONTENT BEGIN\n"
-footer = "END;"
-mem_file = "image_data1.hex"
+mem_file = "mnist_images.mem"
 with open(mem_file, "w") as f:
-    f.write(header)
     for i in range(num_train):
-        for row_idx, row in enumerate(train_images[i] / 255.0):  # Normalize the 8-bit values to [0, 1]
-            for pixel_idx, pixel in enumerate(row):
-                f.write(f"    {row_idx * len(row) + pixel_idx}  : {int(pixel * 256):08X}0000\n")
-    f.write(footer)
+        verilog_lines = []
+        for row in train_images[i] / 255.0:  # Normalize the 8-bit values to [0, 1]
+            row_data = "\n".join([f"{int(pixel * 256):08X}0000" for pixel in row])  # Scale and convert to hex
+            verilog_lines.append(row_data)
+        f.write("\n".join(verilog_lines) + "\n")
 
-mem_file = "label_data1.hex"
+# Save labels to .mem file
+mem_file = "mnist_labels.mem"
 with open(mem_file, "w") as f:
-    f.write(header)
     for i in range(num_train):
         label = train_labels[i]
         one_hot = [0] * 10
         one_hot[label] = 1
-        for j in range(10):
-            f.write(f"    {j}  : {one_hot[j]:08X}0000\n")
-    f.write(footer)
+        label = "\n".join([f"{bit:08X}0000" for bit in one_hot])
+        f.write(f"{label}\n")
+
+header = "CONTENT BEGIN\n"
+footer = "END;"
+mem_file = "image_data1.hex"
+# with open(mem_file, "w") as f:
+#     f.write(header)
+#     for i in range(num_train):
+#         for row_idx, row in enumerate(train_images[i] / 255.0):  # Normalize the 8-bit values to [0, 1]
+#             for pixel_idx, pixel in enumerate(row):
+#                 f.write(f"    {row_idx * len(row) + pixel_idx}  : {int(pixel * 256):08X}0000\n")
+#     f.write(footer)
+
+# mem_file = "label_data1.hex"
+# with open(mem_file, "w") as f:
+#     f.write(header)
+#     for i in range(num_train):
+#         label = train_labels[i]
+#         one_hot = [0] * 10
+#         one_hot[label] = 1
+#         for j in range(10):
+#             f.write(f"    {j}  : {one_hot[j]:08X}0000\n")
+#     f.write(footer)
 
 
 print(f"Converted first 100 images saved to {mem_file}")

@@ -4,12 +4,13 @@ module top_tb;
 
     // Parameters
     parameter int WIDTH = 48;
-    parameter int INPUT_DIM_HEIGHT = 28;
-    parameter int INPUT_DIM_WIDTH = 28;
+    parameter int INPUT_DIM_HEIGHT = 10;
+    parameter int INPUT_DIM_WIDTH = 10;
     parameter int FCL_OUTPUT_DIM = 10;
     parameter int PERIOD = 4;
     parameter int INPUT_SIZE = INPUT_DIM_HEIGHT * INPUT_DIM_WIDTH;
     parameter int NUM_IMAGES = 1000;
+    parameter int TEST_LENGTH = 5;
 
     // Inputs
     logic clk;
@@ -44,25 +45,26 @@ module top_tb;
     logic signed [WIDTH-1:0] image_mem [NUM_IMAGES*INPUT_SIZE];
     logic signed [WIDTH-1:0] label_mem [NUM_IMAGES*FCL_OUTPUT_DIM];
 
-    assign i = input_index;
-
-    always @(i) begin
+    always @(input_index) begin
         for(int row = 0; row < INPUT_DIM_HEIGHT; row++) begin
             for(int col = 0; col < INPUT_DIM_WIDTH; col++) begin
-                input_data[row][col] = image_mem[i * INPUT_SIZE + row * INPUT_DIM_WIDTH + col];
+                input_data[row][col] = image_mem[input_index * INPUT_SIZE + row * INPUT_DIM_WIDTH + col];
             end
         end
         for(int label = 0; label < FCL_OUTPUT_DIM; label++) begin
-            input_labels[label] = label_mem[i * FCL_OUTPUT_DIM + label];
+            input_labels[label] = label_mem[input_index * FCL_OUTPUT_DIM + label];
+            $display("Label %0d: %0h", label, input_labels[label]);
         end
+        
     end
 
     // Stimulus
     initial begin
         // Initialize Inputs
+        $readmemh("scripts/mnist_images.mem", image_mem);
+        $readmemh("scripts/mnist_labels.mem", label_mem);
 
-        $readimage_memh("scripts/mnist_images.image_mem", image_mem);
-        $readimage_memh("scripts/mnist_images.label_mem", label_mem);
+
         
         reset = 1;
         #10;

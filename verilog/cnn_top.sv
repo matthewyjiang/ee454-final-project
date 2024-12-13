@@ -193,6 +193,8 @@ always_ff @(posedge clk or negedge reset) begin
                 state <= CONV_INIT;
                 conv_i <= 0;
                 fcl_i <= 0;
+                correct_count <= 0;
+
             end
 
             CONV_INIT: begin
@@ -208,6 +210,7 @@ always_ff @(posedge clk or negedge reset) begin
                 if (conv_i == CHANNELS-1) begin
                     state <= FCL_INIT;
                 end
+
             end
 
             FCL_INIT: begin
