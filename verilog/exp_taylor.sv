@@ -45,7 +45,6 @@ module exp_taylor #(
     logic signed [WIDTH-1:0] power;     // x^n in Q(FRAC)
     logic signed [WIDTH-1:0] sum;       // Accumulated sum in Q(FRAC)
     logic signed [WIDTH-1:0] term;      // Current term in Q(FRAC)
-    logic [31:0] factorial_val;         // Factorial value (integer)
 
     // Fixed-point representation of 1.0
     localparam int FRAC = FIXED_POINT_INDEX;

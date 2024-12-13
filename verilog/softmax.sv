@@ -19,8 +19,6 @@ module softmax
 logic signed [WIDTH-1:0] sum;
 logic signed [WIDTH-1:0] exp_result [DIMENSION];
 
-logic signed [WIDTH-1:0] norm_sum;
-logic signed [WIDTH-1:0] norm_result;
 logic norm_div_start;  // start calculation
 logic norm_div_busy;   // calculation in progress
 logic norm_div_done;   // calculation is complete (high for one tick)
