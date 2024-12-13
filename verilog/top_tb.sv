@@ -4,8 +4,8 @@ module top_tb;
 
     // Parameters
     parameter int WIDTH = 48;
-    parameter int INPUT_DIM_HEIGHT = 10;
-    parameter int INPUT_DIM_WIDTH = 10;
+    parameter int INPUT_DIM_HEIGHT = 28;
+    parameter int INPUT_DIM_WIDTH = 28;
     parameter int FCL_OUTPUT_DIM = 10;
     parameter int PERIOD = 4;
     parameter int INPUT_SIZE = INPUT_DIM_HEIGHT * INPUT_DIM_WIDTH;
@@ -77,10 +77,10 @@ module top_tb;
 
 
 
-        for (int j = 0; j < 5; j++) begin
+        for (int j = 0; j < TEST_LENGTH; j++) begin
             
             @(posedge softmax_done);
-        end
+        end 
 
         // #1000;
 

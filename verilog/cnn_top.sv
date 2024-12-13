@@ -2,7 +2,7 @@ module cnn_top
 # (
     parameter int WIDTH = 32, 
     parameter int FIXED_POINT_INDEX = 16,
-    parameter int LEARNING_RATE = 1 << (FIXED_POINT_INDEX-2), 
+    parameter int LEARNING_RATE = 1 << (FIXED_POINT_INDEX-1), 
     parameter int CHANNELS = 10,
     parameter int KERNEL_DIM = 3,
     parameter int FCL_OUTPUT_DIM = 10,
@@ -170,14 +170,14 @@ logic signed [WIDTH-1:0] max_value;
 logic [$clog2(FCL_OUTPUT_DIM)-1:0] max_index;
 
 always_comb begin
+    
     for (int i = 0; i < FCL_OUTPUT_DIM; i++) begin
-        if (fcl_output_data[i] > CLIP_VALUE) begin
+        softmax_input_clipped[i] = fcl_output_data[i] >> 6;
+        if (softmax_input_clipped[i] > CLIP_VALUE) begin
             softmax_input_clipped[i] = CLIP_VALUE;
-        end else if (fcl_output_data[i] < -CLIP_VALUE) begin
+        end else if (softmax_input_clipped[i] < -CLIP_VALUE) begin
             softmax_input_clipped[i] = -CLIP_VALUE;
-        end else begin
-            softmax_input_clipped[i] = fcl_output_data[i];
-        end
+        end 
     end
 end
 
@@ -199,7 +199,7 @@ always_ff @(posedge clk or negedge reset) begin
                 // Initialize kernels to random (am assuming k^2 < FCL_OUTPUT_DIM -- if not, instantiate new lfsr for kernel init)
                 for (int j = 0; j < KERNEL_DIM; j++) begin
                     for (int k = 0; k < KERNEL_DIM; k++) begin
-                        conv_layer_input_kernels[conv_i][j][k] <= (lfsr_out[j*KERNEL_DIM*WIDTH + k*WIDTH +: WIDTH]) >> (WIDTH/2+1);
+                        conv_layer_input_kernels[conv_i][j][k] <= (lfsr_out[j*KERNEL_DIM*WIDTH + k*WIDTH +: WIDTH]) >> (WIDTH-FIXED_POINT_INDEX/2+3);
                     end
                 end
 
@@ -213,7 +213,7 @@ always_ff @(posedge clk or negedge reset) begin
             FCL_INIT: begin
                 // Initialize weights and biases to random
                 for (int j = 0; j < FCL_OUTPUT_DIM; j++) begin
-                    fcl_input_weights[fcl_i][j] <= (lfsr_out[j*WIDTH +: WIDTH]) >> (WIDTH/2+1);
+                    fcl_input_weights[fcl_i][j] <= (lfsr_out[j*WIDTH +: WIDTH]) >> (WIDTH-FIXED_POINT_INDEX/2+3);
                 end
 
                 fcl_i <= fcl_i + 1;
