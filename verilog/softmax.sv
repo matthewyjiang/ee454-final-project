@@ -114,7 +114,6 @@ always_ff @(posedge clk or negedge reset) begin
                     if (i < DIMENSION) begin
                         if (norm_div_valid) begin
                             output_data[i] <= norm_div_val;
-                            $display("output_data[%0d]: %0d.%0d", i,norm_div_val >>> FIXED_POINT_INDEX, (norm_div_val & ((1 << FIXED_POINT_INDEX) - 1)) * 10000 / (1 << FIXED_POINT_INDEX));
                             state <= NORM_DIV;
                             i <= i + 1;
                         end

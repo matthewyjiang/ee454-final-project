@@ -4,8 +4,8 @@ module top_tb;
 
     // Parameters
     parameter int WIDTH = 32;
-    parameter int INPUT_DIM_HEIGHT = 28;
-    parameter int INPUT_DIM_WIDTH = 28;
+    parameter int INPUT_DIM_HEIGHT = 10;
+    parameter int INPUT_DIM_WIDTH = 10;
     parameter int FCL_OUTPUT_DIM = 10;
     parameter int PERIOD = 4;
     parameter int TEST_LENGTH = 100;
@@ -16,6 +16,7 @@ module top_tb;
     logic reset;
     logic signed [WIDTH-1:0] input_data  [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH];
     logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM];
+    logic softmax_done;
     // Clock generation
     initial begin
         clk = 0;
@@ -32,7 +33,8 @@ module top_tb;
         .clk(clk),
         .reset(reset),
         .input_data(input_data),
-        .input_labels(input_labels)
+        .input_labels(input_labels),
+        .softmax_done(softmax_done)
     );
 
     logic signed [WIDTH-1:0] mem [TEST_LENGTH*INPUT_SIZE];
@@ -41,7 +43,7 @@ module top_tb;
     initial begin
         // Initialize Inputs
 
-        string filename = "verilog/test.mem";
+        string filename = "scripts/mnist_images.mem";
         $readmemh(filename, mem);
         
         reset = 1;
@@ -49,7 +51,6 @@ module top_tb;
         reset = 0;
         #10;
         reset = 1;
-
 
         // IMPORTANT: Input needs to be ready before changing to RUN state. else will overwrite everything with X
         #(1700*PERIOD); // wait for initialization
@@ -73,8 +74,10 @@ module top_tb;
             input_labels = '{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             input_labels[i % FCL_OUTPUT_DIM] = 1;
 
-            // two clocks for forward, backward pass
-            #(PERIOD*2);
+            // // two clocks for forward, backward pass
+            // #(PERIOD*2);
+
+            @(posedge softmax_done);
         end
 
         // #1000;

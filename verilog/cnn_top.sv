@@ -16,7 +16,9 @@ module cnn_top
 
     // need these to change every OTHER clock
     input  logic signed [WIDTH-1:0] input_data [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH],
-    input  logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM] // assumed to be 1-hot encoded for now
+    input  logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM], // assumed to be 1-hot encoded for now
+
+    output logic softmax_done
     
     // temp for testbench
     // input logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]
@@ -50,7 +52,7 @@ logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]; // the error that co
 
 logic signed [WIDTH-1:0] softmax_output [FCL_OUTPUT_DIM];
 logic softmax_start;
-logic softmax_done;
+// logic softmax_done;
 logic softmax_busy;
 
 // Instantiate a convolution module
@@ -136,7 +138,7 @@ cross_entropy_loss #(
     .WIDTH(WIDTH),
     .DIMENSION(FCL_OUTPUT_DIM)
 ) cross_entropy_loss_inst (
-    .probs(fcl_output_data),
+    .probs(softmax_output),
     .labels(input_labels),
     .input_error(fcl_output_error),
     .loss()
@@ -158,6 +160,7 @@ logic [$clog2(CHANNELS):0] conv_i;
 always_ff @(posedge clk or negedge reset) begin
     if (!reset) begin
         state <= LFSR_INIT;
+        
     end 
     else begin
         case (state)
@@ -191,7 +194,7 @@ always_ff @(posedge clk or negedge reset) begin
                 fcl_i <= fcl_i + 1;
 
                 if (fcl_i == FCL_INPUT_DIM) begin // Question: should this be FCL_INPUT_DIM or FCL_INPUT_DIM+1? since 0-indexing
-                    state <= RUN;
+                    state <= WAITING;
                 end
             end
 
