@@ -3,13 +3,14 @@
 module top_tb;
 
     // Parameters
-    parameter int WIDTH = 32;
+    parameter int WIDTH = 48;
     parameter int INPUT_DIM_HEIGHT = 10;
     parameter int INPUT_DIM_WIDTH = 10;
     parameter int FCL_OUTPUT_DIM = 10;
     parameter int PERIOD = 4;
     parameter int TEST_LENGTH = 100;
     parameter int INPUT_SIZE = INPUT_DIM_HEIGHT * INPUT_DIM_WIDTH;
+    parameter int NUM_IMAGES = 1000;
 
     // Inputs
     logic clk;
@@ -17,6 +18,7 @@ module top_tb;
     logic signed [WIDTH-1:0] input_data  [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH];
     logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM];
     logic softmax_done;
+    logic signed [$clog2(NUM_IMAGES)-1:0] input_index;
     // Clock generation
     initial begin
         clk = 0;
@@ -28,16 +30,31 @@ module top_tb;
         .WIDTH(WIDTH),
         .INPUT_DIM_HEIGHT(INPUT_DIM_HEIGHT),
         .INPUT_DIM_WIDTH(INPUT_DIM_WIDTH),
-        .FCL_OUTPUT_DIM(FCL_OUTPUT_DIM)
+        .FCL_OUTPUT_DIM(FCL_OUTPUT_DIM),
+        .NUM_IMAGES(NUM_IMAGES)
     ) uut (
         .clk(clk),
         .reset(reset),
         .input_data(input_data),
         .input_labels(input_labels),
-        .softmax_done(softmax_done)
+        .softmax_done(softmax_done),
+        .input_index(input_index),
+        .train(1'b1)
     );
 
     logic signed [WIDTH-1:0] mem [TEST_LENGTH*INPUT_SIZE];
+
+    assign i = input_index;
+
+    always @(i) begin
+        for(int row = 0; row < INPUT_DIM_HEIGHT; row++) begin
+            for(int col = 0; col < INPUT_DIM_WIDTH; col++) begin
+                input_data[row][col] = mem[i * INPUT_SIZE + row * INPUT_DIM_WIDTH + col];
+            end
+        end
+        input_labels = '{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        input_labels[i % FCL_OUTPUT_DIM] = 1;
+    end
 
     // Stimulus
     initial begin
@@ -57,26 +74,10 @@ module top_tb;
         // = 10 kernels + 28-3+1 = 26x26 => 13x13 = 169*10 + 10
         // #75;
 
-        for (int i = 0; i < 5; i++) begin
+
+
+        for (int j = 0; j < 5; j++) begin
             
-            // read input data from mem file
-            // $readmemh("C:/Users/cl917/OneDrive/Documents/Classes/ee454/ee454-final-project/verilog/test.mem", input_data, start_index, start_index + n - 1);
-            // start_index = start_index + n;
-
-            // loop thru input data
-            for(int row = 0; row < INPUT_DIM_HEIGHT; row++) begin
-                for(int col = 0; col < INPUT_DIM_WIDTH; col++) begin
-                    input_data[row][col] = mem[i * INPUT_SIZE + row * INPUT_DIM_WIDTH + col];
-                end
-            end
-
-            // set input labels
-            input_labels = '{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            input_labels[i % FCL_OUTPUT_DIM] = 1;
-
-            // // two clocks for forward, backward pass
-            // #(PERIOD*2);
-
             @(posedge softmax_done);
         end
 

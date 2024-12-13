@@ -8,17 +8,21 @@ module cnn_top
     parameter int FCL_OUTPUT_DIM = 10,
     parameter int MAX_POOL_STRIDE = 2,
     parameter int INPUT_DIM_WIDTH = 28,
-    parameter int INPUT_DIM_HEIGHT = 28
+    parameter int INPUT_DIM_HEIGHT = 28,
+    parameter int NUM_IMAGES = 10000,
+    parameter logic signed [WIDTH-1:0] CLIP_VALUE = 21 << FIXED_POINT_INDEX
 ) 
 (
     input  logic clk,
     input  logic reset,
+    input  logic train,
 
     // need these to change every OTHER clock
     input  logic signed [WIDTH-1:0] input_data [INPUT_DIM_HEIGHT][INPUT_DIM_WIDTH],
     input  logic signed [WIDTH-1:0] input_labels [FCL_OUTPUT_DIM], // assumed to be 1-hot encoded for now
 
-    output logic softmax_done
+    output logic softmax_done,
+    output logic [$clog2(NUM_IMAGES)-1:0] input_index
     
     // temp for testbench
     // input logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]
@@ -51,9 +55,11 @@ logic signed [WIDTH-1:0] fcl_input_error [FCL_INPUT_DIM]; // the error that come
 logic signed [WIDTH-1:0] fcl_output_error [FCL_OUTPUT_DIM]; // the error that comes from the 
 
 logic signed [WIDTH-1:0] softmax_output [FCL_OUTPUT_DIM];
-logic softmax_start;
+logic softmax_start;    
 // logic softmax_done;
 logic softmax_busy;
+logic signed [WIDTH-1:0] softmax_input_clipped [FCL_OUTPUT_DIM];
+
 
 // Instantiate a convolution module
 
@@ -116,6 +122,8 @@ fully_connected_layer #(
     .output_weights(fcl_output_weights)
 );
 
+
+
 // Instantiate a softmax module
 
 softmax #(
@@ -126,7 +134,7 @@ softmax #(
     .clk(clk),
     .reset(reset),
     .start(softmax_start),
-    .input_data(fcl_output_data),
+    .input_data(softmax_input_clipped),
     .output_data(softmax_output),
     .done(softmax_done),
     .busy(softmax_busy)
@@ -152,14 +160,27 @@ LFSR #(.WIDTH(WIDTH*FCL_OUTPUT_DIM)) lfsr (
     .out(lfsr_out)
 );
 
-typedef enum {LFSR_INIT, CONV_INIT, FCL_INIT, RUN, WAITING} state_t;
+typedef enum {LFSR_INIT, CONV_INIT, FCL_INIT, RUN, UPDATE_WEIGHTS, WAITING} state_t;
 state_t state;
 logic [$clog2(FCL_INPUT_DIM):0] fcl_i;
 logic [$clog2(CHANNELS):0] conv_i;
 
+always_comb begin
+    for (int i = 0; i < FCL_OUTPUT_DIM; i++) begin
+        if (fcl_output_data[i] > CLIP_VALUE) begin
+            softmax_input_clipped[i] = CLIP_VALUE;
+        end else if (fcl_output_data[i] < -CLIP_VALUE) begin
+            softmax_input_clipped[i] = -CLIP_VALUE;
+        end else begin
+            softmax_input_clipped[i] = fcl_output_data[i];
+        end
+    end
+end
+
 always_ff @(posedge clk or negedge reset) begin
     if (!reset) begin
         state <= LFSR_INIT;
+        input_index <= 0;
         
     end 
     else begin
@@ -194,14 +215,12 @@ always_ff @(posedge clk or negedge reset) begin
                 fcl_i <= fcl_i + 1;
 
                 if (fcl_i == FCL_INPUT_DIM) begin // Question: should this be FCL_INPUT_DIM or FCL_INPUT_DIM+1? since 0-indexing
-                    state <= WAITING;
+                    state <= RUN;
                 end
             end
 
             RUN: begin
-                // update weights
-                fcl_input_weights <= fcl_output_weights;
-                conv_layer_input_kernels <= conv_layer_output_kernels;
+                // dummy state for propagation delay
                 state <= WAITING;
             end
 
@@ -214,9 +233,21 @@ always_ff @(posedge clk or negedge reset) begin
                 end
 
                 if (softmax_done) begin
-                    state <= RUN;
+                    state <= UPDATE_WEIGHTS;
                 end
 
+            end
+
+            UPDATE_WEIGHTS: begin
+                // update weights
+                if (train) begin
+                    fcl_input_weights <= fcl_output_weights;
+                    conv_layer_input_kernels <= conv_layer_output_kernels;
+                end
+
+                // change the image
+                input_index <= input_index + 1;
+                state <= RUN;
             end
 
         endcase
